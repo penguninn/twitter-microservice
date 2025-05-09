@@ -1,0 +1,21 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: registry-service
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ["health", "info", "metrics", "prometheus"]
+
+#logging:
+#  level:
+#    eureka: debug

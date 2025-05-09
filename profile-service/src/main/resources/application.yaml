@@ -1,0 +1,33 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: profile-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/profile_service
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: profile_service_user
+    password: profile_service_user
+
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ["health", "routes", "gateway", "metrics", "info"]
+  info:
+    env:
+      enabled: true
+info:
+  app:
+    name: profile-service
+logging:
+  level:
+    org.springframework.web: debug

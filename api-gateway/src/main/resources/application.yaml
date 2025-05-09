@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000/realms/twitter
+
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ["health", "routes", "gateway", "metrics", "info"]
+  info:
+    env:
+      enabled: true
+info:
+  app:
+    name: api-gateway
+
+logging:
+  level:
+    org.springframework.cloud.gateway: debug
