@@ -11,11 +11,16 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    private final String[] PUBLIC_ENDPOINT = {
+            "/profile/**",
+            "/actuator/**"
+    };
+
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         return http
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/profile/public", "/actuator/**").permitAll()
+                        .pathMatchers(PUBLIC_ENDPOINT).permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

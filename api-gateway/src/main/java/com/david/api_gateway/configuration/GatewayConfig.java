@@ -13,12 +13,13 @@ public class GatewayConfig {
         return builder.routes()
                 .route("profile-service", r -> r.path("/profile/**")
                         .filters(f -> f
+//                                .stripPrefix(1)
                                 .circuitBreaker(c -> c
                                         .setName("user-circuit-breaker")
-                                        .setFallbackUri("forward:/user-fallback")
+                                        .setFallbackUri("forward:/profile-fallback")
                                 )
                         )
-                        .uri("lb://user-service"))
+                        .uri("lb://profile-service"))
                 .build();
     }
 }

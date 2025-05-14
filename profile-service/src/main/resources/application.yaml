@@ -9,6 +9,17 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: profile_service_user
     password: profile_service_user
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000/realms/twitter
 
 eureka:
   client:
@@ -28,6 +39,12 @@ management:
 info:
   app:
     name: profile-service
+
+idp:
+  url: http://localhost:9000
+  client-id: twitter-client
+  client-secret: E3CNpb5g01PrhtbRLbe2cxqxoAAF3UYo
+
 logging:
   level:
     org.springframework.web: debug

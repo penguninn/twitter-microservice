@@ -18,6 +18,8 @@ services:
       KC_METRICS_ENABLED: true
     ports:
       - "9000:8080"
+    volumes:
+      - ./themes:/opt/keycloak/themes/
     depends_on:
       - mysql
 

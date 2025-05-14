@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class FallbackController {
 
-    @RequestMapping("/user-fallback")
+    @RequestMapping("/profile-fallback")
     public String userFallback() {
-        return "User service is not available";
+        return "Profile service is not available";
     }
 
     @RequestMapping(value = "/auth-fallback", method = {RequestMethod.GET, RequestMethod.POST})
