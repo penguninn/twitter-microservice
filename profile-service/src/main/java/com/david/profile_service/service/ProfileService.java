@@ -1,126 +1,430 @@
 package com.david.profile_service.service;
 
-import com.david.profile_service.dto.request.Credential;
-import com.david.profile_service.dto.request.ProfileRegisterRequest;
-import com.david.profile_service.dto.request.TokenExchangeRequest;
-import com.david.profile_service.dto.request.UserCreationRequest;
+import com.david.profile_service.dto.request.*;
+import com.david.profile_service.dto.response.ApiResponse;
 import com.david.profile_service.dto.response.ProfileResponse;
-import com.david.profile_service.dto.response.TokenExchangeResponse;
 import com.david.profile_service.entity.Profile;
 import com.david.profile_service.exception.ProfileNotFoundException;
 import com.david.profile_service.exception.ProfileServiceException;
 import com.david.profile_service.mapper.ProfileMapper;
-import com.david.profile_service.repository.IdentityProvider;
+import com.david.profile_service.repository.MediaClient;
 import com.david.profile_service.repository.ProfileRepository;
+import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@CacheConfig(cacheNames = "profileByUsername")
 public class ProfileService {
+
     private final ProfileRepository profileRepository;
-    private final IdentityProvider identityProvider;
+    private final MediaClient mediaClient;
+    private final Keycloak keycloakAdminClient;
+    private final CacheManager cacheManager;
+
+    @Value("${idp.realm}")
+    private String realm;
 
     @Value("${idp.client-id}")
     private String clientId;
 
+    @Value("${idp.url}")
+    private String serverUrl;
+
     @Value("${idp.client-secret}")
     private String clientSecret;
 
-    public ProfileResponse register(ProfileRegisterRequest request) {
-        try {
-            log.info("ProfileService::register execution started");
-            TokenExchangeResponse tokenInfo = identityProvider.exchangeToken(TokenExchangeRequest.builder()
-                    .grant_type("client_credentials")
-                    .client_id(clientId)
-                    .client_secret(clientSecret)
-                    .scope("openid")
-                    .build());
-            log.info("AccessToken {}", tokenInfo.getAccessToken());
-            ResponseEntity<?> creationResponse = identityProvider.createUser(
-                    "Bearer " + tokenInfo.getAccessToken(),
-                    UserCreationRequest.builder()
-                            .username(request.getUsername())
-                            .enabled(true)
-                            .email(request.getEmail())
-                            .firstName(request.getFirstName())
-                            .lastName(request.getLastName())
-                            .emailVerified(false)
-                            .credentials(List.of(
-                                    Credential.builder()
-                                            .type("password")
-                                            .temporary(false)
-                                            .value(request.getPassword())
-                                            .build()
-                            ))
-                            .build());
-            String userId = extractUserId(creationResponse);
-            Profile profile = ProfileMapper.mapToEntity(request);
-            profile.setUserId(userId);
-            log.info("ProfileService::register execution ended");
-            return ProfileMapper.mapToDto(profileRepository.save(profile));
-        } catch (Exception e) {
-            log.error("Failed to persist user: {}", e.getMessage());
-            throw new ProfileServiceException("Failed to persist user: " + e.getMessage());
-        }
-    }
-
+    @Cacheable(key = "#username")
     public ProfileResponse getProfile(String username) {
-        log.info("ProfileService::getProfile execution started");
+        log.info("ProfileService::getProfile - Execution started. [username: {}]", username);
         Profile profile = profileRepository.findByUsername(username)
-                .orElseThrow(() -> new ProfileNotFoundException("Profile not found"));
-        log.info("ProfileService::getProfile execution ended");
+                .orElseThrow(() -> {
+                    log.warn("ProfileService::getProfile - Profile not found for username: {}", username);
+                    return new ProfileNotFoundException("Profile not found with username: " + username);
+                });
+        log.info("ProfileService::getProfile - Execution ended successfully. [username: {}]", username);
         return ProfileMapper.mapToDto(profile);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @Cacheable(cacheNames = "allProfiles", key = "{#page, #size, #sortBy}")
     public List<ProfileResponse> getAllProfile(int page, int size, String sortBy) {
+        log.info("ProfileService::getAllProfile - Execution started. [page: {}, size: {}, sortBy: {}]", page, size, sortBy);
         try {
-            log.info("ProfileService::getAllProfile execution started");
-            int p = page > 0 ? page - 1 : 0;
+            int p = Math.max(0, page - 1);
             String[] sortParams = sortBy.split(",");
-            Sort sortOrder = Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]);
+            Sort.Direction direction = sortParams.length > 1 ? Sort.Direction.fromString(sortParams[1]) : Sort.Direction.ASC;
+            Sort sortOrder = Sort.by(direction, sortParams[0]);
             Pageable pageable = PageRequest.of(p, size, sortOrder);
+
             Page<Profile> profiles = profileRepository.findAll(pageable);
             List<ProfileResponse> profileResponses = profiles.stream()
-                    .map(profile -> ProfileResponse.builder()
-                            .userId(profile.getUserId())
-                            .username(profile.getUsername())
-                            .email(profile.getEmail())
-                            .firstName(profile.getFirstName())
-                            .lastName(profile.getLastName())
-                            .dob(profile.getDob())
-                            .build())
+                    .map(ProfileMapper::mapToDto)
                     .toList();
-            log.info("ProfileService::getAllProfile execution ended");
+            log.info("ProfileService::getAllProfile - Execution ended successfully. Found {} profiles.", profileResponses.size());
             return profileResponses;
+        } catch (IllegalArgumentException e) {
+            log.error("ProfileService::getAllProfile - Invalid sort direction. [sortBy: {}]", sortBy, e);
+            throw new ProfileServiceException("Invalid sort direction provided: " + sortBy, e);
         } catch (RuntimeException e) {
-            throw new ProfileServiceException("Failed to get all profiles: " + e.getMessage());
+            log.error("ProfileService::getAllProfile - Failed to get all profiles.", e);
+            throw new ProfileServiceException("Failed to get all profiles", e);
         }
-
     }
 
-    public String extractUserId(ResponseEntity<?> response) {
+    @Transactional
+    @CachePut(key = "#result.username")
+    public ProfileResponse register(ProfileCreationRequest request) {
+        log.info("ProfileService::register - Execution started. [email: {}]", request.getEmail());
+        String userId;
         try {
-            String location = response.getHeaders().getFirst("Location");
-            if (location == null || !location.contains("/")) {
-                throw new ProfileServiceException("Invalid user creation response, missing Location header");
+            UsersResource usersResource = keycloakAdminClient.realm(realm).users();
+            UserRepresentation userRepresentation = createUserRepresentation(request);
+
+            log.info("ProfileService::register - Creating user in Keycloak. [username: {}]", userRepresentation.getUsername());
+
+            try (Response keycloakResponse = usersResource.create(userRepresentation)) {
+                if (keycloakResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+                    userId = extractUserIdFromKeycloakResponse(keycloakResponse);
+                    log.info("ProfileService::register - User created successfully in Keycloak. [userId: {}]", userId);
+                } else {
+                    String reason = keycloakResponse.getStatusInfo().getReasonPhrase();
+                    String errorDetails = "";
+                    if (keycloakResponse.hasEntity()) {
+                        try {
+                            errorDetails = keycloakResponse.readEntity(String.class);
+                        } catch (Exception readEx) {
+                            log.warn("ProfileService::register - Could not read error entity from Keycloak response.", readEx);
+                        }
+                    }
+                    log.error("ProfileService::register - Failed to persist user to Keycloak. [status: {}, reason: {}, details: {}]",
+                            keycloakResponse.getStatus(), reason, errorDetails);
+                    throw new ProfileServiceException("Failed to persist user to Keycloak: " + reason + " " + errorDetails);
+                }
             }
-            String[] parts = location.split("/");
-            return parts[parts.length - 1];
+
+            Profile profile = ProfileMapper.mapToEntity(request);
+            profile.setUsername(request.getEmail());
+            profile.setUserId(userId);
+            Profile savedProfile = profileRepository.save(profile);
+            log.info("ProfileService::register - Profile saved successfully in local DB. [profileId: {}, userId: {}]", savedProfile.getId(), userId);
+            log.info("ProfileService::register - Execution ended successfully. [userId: {}]", userId);
+            return ProfileMapper.mapToDto(savedProfile);
+        } catch (ProfileServiceException e) {
+            throw e;
         } catch (Exception e) {
-            throw new ProfileServiceException("Failed to extract user ID from response: " + e);
+            log.error("ProfileService::register - Failed to register account. [email: {}]", request.getEmail(), e);
+            throw new ProfileServiceException("Failed to register account: " + e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
+    @CachePut(key = "#result.username")
+    public ProfileResponse updateUsername(String userId, UsernameUpdateRequest request) {
+        log.info("ProfileService::updateUsername - Execution started. [userId: {}, newUsername: {}]", userId, request.getUsername());
+        try {
+            Profile existingProfile = profileRepository.findByUserId(userId)
+                    .orElseThrow(() -> {
+                        log.warn("ProfileService::updateUsername - Profile not found in local DB. [userId: {}]", userId);
+                        return new ProfileNotFoundException("Not found profile with user-id: " + userId);
+                    });
+
+            String oldUsername = existingProfile.getUsername();
+            if (request.getUsername().equals(oldUsername)) {
+                log.info("ProfileService::updateUsername - New username is the same as current. No update needed. [userId: {}]", userId);
+                return ProfileMapper.mapToDto(existingProfile);
+            }
+
+            try {
+                UserResource userResource = keycloakAdminClient.realm(realm).users().get(userId);
+                UserRepresentation userRepresentation = userResource.toRepresentation();
+                log.info("ProfileService::updateUsername - Updating username in Keycloak. [userId: {}, oldUsernameKeycloak: {}, newUsername: {}]",
+                        userId, userRepresentation.getUsername(), request.getUsername());
+                userRepresentation.setUsername(request.getUsername());
+                userResource.update(userRepresentation);
+                log.info("ProfileService::updateUsername - Username updated successfully in Keycloak. [userId: {}, newUsername: {}]", userId, request.getUsername());
+            } catch (jakarta.ws.rs.NotFoundException e) {
+                log.error("ProfileService::updateUsername - User not found in Keycloak. [userId: {}]", userId, e);
+                throw new ProfileNotFoundException("User not found in Keycloak with ID: " + userId, e);
+            } catch (Exception e) {
+                log.error("ProfileService::updateUsername - Keycloak error during username update. [userId: {}]", userId, e);
+                throw new ProfileServiceException("Keycloak error during username update: " + e.getMessage(), e);
+            }
+
+            existingProfile.setUsername(request.getUsername());
+            Profile updatedProfile = profileRepository.save(existingProfile);
+            log.info("ProfileService::updateUsername - Username updated successfully in local DB. [userId: {}]", userId);
+
+            if(oldUsername != null && !oldUsername.equals(request.getUsername())) {
+                log.info("ProfileService::updateUsername - Updating cache for username: {}", oldUsername);
+                cacheManager.getCache("profileByUsername").evict(oldUsername);
+            }
+
+            ProfileResponse updatedResponse = ProfileMapper.mapToDto(updatedProfile);
+            log.info("ProfileService::updateUsername - Execution ended successfully. [userId: {}]", userId);
+            return updatedResponse;
+        } catch (ProfileServiceException | ProfileNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("ProfileService::updateUsername - Failed to update username. [userId: {}]", userId, e);
+            throw new ProfileServiceException("Failed to update username: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
+    @CachePut(key = "#result.username")
+    public ProfileResponse updateEmail(String userId, EmailUpdateRequest request) {
+        log.info("ProfileService::updateEmail - Execution started. [userId: {}, newEmail: {}]", userId, request.getEmail());
+        try {
+            Profile existingProfile = profileRepository.findByUserId(userId)
+                    .orElseThrow(() -> {
+                        log.warn("ProfileService::updateEmail - Profile not found in local DB. [userId: {}]", userId);
+                        return new ProfileNotFoundException("Not found profile with user-id: " + userId);
+                    });
+            if (request.getEmail().equals(existingProfile.getEmail())) {
+                log.info("ProfileService::updateEmail - New email is the same as current. No update needed. [userId: {}]", userId);
+                return ProfileMapper.mapToDto(existingProfile);
+            }
+            try {
+                UserResource userResource = keycloakAdminClient.realm(realm).users().get(userId);
+                UserRepresentation userRepresentation = userResource.toRepresentation();
+                log.info("ProfileService::updateEmail - Updating email in Keycloak. [userId: {}, oldEmailKeycloak: {}, newEmail: {}]",
+                        userId, userRepresentation.getEmail(), request.getEmail());
+                userRepresentation.setEmail(request.getEmail());
+                userRepresentation.setEmailVerified(false);
+                userResource.update(userRepresentation);
+//                log.info("ProfileService::updateEmail - Email updated successfully in Keycloak. Verification set to false. [userId: {}]", userId);
+//                try {
+//                    userResource.sendVerifyEmail();
+//                    log.info("ProfileService::updateEmail - Sent email verification request to new email. [userId: {}]", userId);
+//                } catch (Exception e) {
+//                    log.warn("ProfileService::updateEmail - Failed to send verification email after Keycloak update. [userId: {}]", userId, e);
+//                }
+            } catch (jakarta.ws.rs.NotFoundException e) {
+                log.error("ProfileService::updateEmail - User not found in Keycloak. [userId: {}]", userId, e);
+                throw new ProfileNotFoundException("User not found in Keycloak with ID: " + userId, e);
+            } catch (Exception e) {
+                log.error("ProfileService::updateEmail - Keycloak error during email update. [userId: {}]", userId, e);
+                throw new ProfileServiceException("Keycloak error during email update: " + e.getMessage(), e);
+            }
+
+            existingProfile.setEmail(request.getEmail());
+            Profile updatedProfile = profileRepository.save(existingProfile);
+            log.info("ProfileService::updateEmail - Email (and possibly username) updated successfully in local DB. [userId: {}]", userId);
+            log.info("ProfileService::updateEmail - Execution ended successfully. [userId: {}]", userId);
+            return ProfileMapper.mapToDto(updatedProfile);
+        } catch (ProfileServiceException | ProfileNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("ProfileService::updateEmail - Failed to update email. [userId: {}]", userId, e);
+            throw new ProfileServiceException("Failed to update email: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
+    @CachePut(key = "#result.username")
+    public ProfileResponse updateProfile(String userId, ProfileUpdateRequest request, MultipartFile profileImage, MultipartFile bannerImage) {
+        log.info("ProfileService::updateProfile - Execution started. [userId: {}]", userId);
+        try {
+            Profile existingProfile = profileRepository.findByUserId(userId)
+                    .orElseThrow(() -> {
+                        log.warn("ProfileService::updateProfile - Profile not found in local DB. [userId: {}]", userId);
+                        return new ProfileNotFoundException("Not found profile with user-id: " + userId);
+                    });
+
+            String finalProfileImgUrl = existingProfile.getProfileImageUrl();
+            if (profileImage != null && !profileImage.isEmpty()) {
+                log.info("ProfileService::updateProfile - Attempting to upload profile image. [userId: {}]", userId);
+                try {
+                    ApiResponse.Payload<String> mediaResponse = mediaClient.uploadImage(profileImage).getBody();
+                    if (mediaResponse != null && mediaResponse.getResult() != null && !mediaResponse.getResult().isEmpty()) {
+                        finalProfileImgUrl = mediaResponse.getResult();
+                        log.info("ProfileService::updateProfile - Profile image updated successfully. [userId: {}, newUrl: {}]", userId, finalProfileImgUrl);
+                    } else {
+                        log.warn("ProfileService::updateProfile - Profile image upload returned no URL. [userId: {}]", userId);
+                    }
+                } catch (Exception e) {
+                    log.warn("ProfileService::updateProfile - Failed to upload profile image. [userId: {}]", userId, e);
+                }
+            }
+            String finalBannerImageUrl = existingProfile.getBannerImageUrl();
+            if (bannerImage != null && !bannerImage.isEmpty()) {
+                log.info("ProfileService::updateProfile - Attempting to upload banner image. [userId: {}]", userId);
+                try {
+                    ApiResponse.Payload<String> mediaResponse = mediaClient.uploadImage(bannerImage).getBody();
+                    if (mediaResponse != null && mediaResponse.getResult() != null && !mediaResponse.getResult().isEmpty()) {
+                        finalBannerImageUrl = mediaResponse.getResult();
+                        log.info("ProfileService::updateProfile - Banner image updated successfully. [userId: {}, newUrl: {}]", userId, finalBannerImageUrl);
+                    } else {
+                        log.warn("ProfileService::updateProfile - Banner image upload returned no URL. [userId: {}]", userId);
+                    }
+                } catch (Exception e) {
+                    log.warn("ProfileService::updateProfile - Failed to upload banner image. [userId: {}]", userId, e);
+                }
+            }
+            existingProfile.setDisplayName(request.getDisplayName());
+            existingProfile.setBio(request.getBio());
+            existingProfile.setLocation(request.getLocation());
+            existingProfile.setWebsiteUrl(request.getWebsiteUrl());
+            existingProfile.setProfileImageUrl(finalProfileImgUrl);
+            existingProfile.setBannerImageUrl(finalBannerImageUrl);
+            existingProfile.setDateOfBirth(request.getDateOfBirth());
+
+            Profile updatedProfile = profileRepository.save(existingProfile);
+            log.info("ProfileService::updateProfile - Profile updated successfully in local DB. [userId: {}]", userId);
+            log.info("ProfileService::updateProfile - Execution ended successfully. [userId: {}]", userId);
+            return ProfileMapper.mapToDto(updatedProfile);
+        } catch (ProfileServiceException | ProfileNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("ProfileService::updateProfile - Failed to update profile. [userId: {}]", userId, e);
+            throw new ProfileServiceException("Failed to update profile: " + e.getMessage(), e);
+        }
+    }
+
+    @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
+    public void changePassword(String userId, ChangePasswordRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String username = jwt.getClaim("preferred_username");
+        log.info("ProfileService::changePassword - Execution started. [userId: {}]", userId);
+
+        if (!request.isValid()) {
+            log.error("ProfileService::changePassword - Passwords do not match. [userId: {}]", userId);
+            throw new ProfileServiceException("New password and confirm password do not match");
+        }
+
+        if (!isValidOldPassword(username, request.getOldPassword())) {
+            log.error("ProfileService::changePassword - Old password is invalid. [username: {}]", username);
+            throw new ProfileServiceException("Incorrect old password");
+        }
+
+        try {
+            log.info("ProfileService::changePassword - Changing password in Keycloak. [userId: {}]", userId);
+            UserResource userResource = keycloakAdminClient.realm(realm).users().get(userId);
+            CredentialRepresentation credential = new CredentialRepresentation();
+            credential.setType(CredentialRepresentation.PASSWORD);
+            credential.setValue(request.getNewPassword());
+            credential.setTemporary(false);
+            userResource.resetPassword(credential);
+            log.info("ProfileService::changePassword - Password changed successfully in Keycloak. [userId: {}]", userId);
+        } catch (jakarta.ws.rs.NotFoundException e) {
+            log.error("ProfileService::changePassword - User not found in Keycloak. [userId: {}]", userId, e);
+            throw new ProfileNotFoundException("User not found in Keycloak with ID: " + userId, e);
+        } catch (Exception e) {
+            log.error("ProfileService::changePassword - Keycloak error during password change. [userId: {}]", userId, e);
+            throw new ProfileServiceException("Keycloak error during password change: " + e.getMessage(), e);
+        }
+    }
+
+    @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
+    public void deleteProfile(String userId) {
+        log.info("ProfileService::deleteProfile - Execution started. [userId: {}]", userId);
+        try {
+            Profile existingProfile = profileRepository.findByUserId(userId)
+                    .orElseThrow(() -> {
+                        log.warn("ProfileService::deleteProfile - Profile not found in local DB. [userId: {}]", userId);
+                        return new ProfileNotFoundException("Not found profile with user-id: " + userId);
+                    });
+
+            try {
+                log.info("ProfileService::deleteProfile - Deleting user from Keycloak. [userId: {}]", userId);
+                keycloakAdminClient.realm(realm).users().delete(userId);
+                log.info("ProfileService::deleteProfile - User deleted successfully from Keycloak. [userId: {}]", userId);
+            } catch (jakarta.ws.rs.NotFoundException e) {
+                log.error("ProfileService::deleteProfile - User not found in Keycloak. [userId: {}]", userId, e);
+                throw new ProfileNotFoundException("User not found in Keycloak with ID: " + userId, e);
+            } catch (Exception e) {
+                log.error("ProfileService::deleteProfile - Keycloak error during user deletion. [userId: {}]", userId, e);
+                throw new ProfileServiceException("Keycloak error during user deletion: " + e.getMessage(), e);
+            }
+
+            profileRepository.delete(existingProfile);
+            cacheManager.getCache("profileByUsername").evict(existingProfile.getUsername());
+            log.info("ProfileService::deleteProfile - Profile deleted successfully from local DB. [userId: {}]", userId);
+        } catch (ProfileServiceException | ProfileNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("ProfileService::deleteProfile - Failed to delete profile. [userId: {}]", userId, e);
+            throw new ProfileServiceException("Failed to delete profile: " + e.getMessage(), e);
+        }
+    }
+
+    private boolean isValidOldPassword(String username, String password) {
+        try (Keycloak keycloak = KeycloakBuilder.builder()
+                .grantType(OAuth2Constants.PASSWORD)
+                .serverUrl(serverUrl)
+                .realm(realm)
+                .username(username)
+                .password(password)
+                .clientId(clientId)
+                .clientSecret(clientSecret)
+                .scope("openid")
+                .build()) {
+            keycloak.tokenManager().getAccessToken();
+            return true;
+        } catch (Exception e) {
+            log.error("ProfileService::isValidOldPassword - Invalid old password. [username: {}]", username, e);
+            return false;
+        }
+    }
+
+    private UserRepresentation createUserRepresentation(ProfileCreationRequest request) {
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setUsername(request.getEmail());
+        userRepresentation.setEnabled(true);
+        userRepresentation.setEmail(request.getEmail());
+        userRepresentation.setEmailVerified(false);
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setTemporary(false);
+        credential.setValue(request.getPassword());
+        userRepresentation.setCredentials(List.of(credential));
+        return userRepresentation;
+    }
+
+    private String extractUserIdFromKeycloakResponse(Response response) {
+        log.debug("ProfileService::extractUserIdFromKeycloakResponse - Attempting to extract userId from Keycloak response. [status: {}]", response.getStatus());
+        String location = response.getLocation() != null ? response.getLocation().getPath() : null;
+        if (location == null || !location.contains("/")) {
+            log.error("ProfileService::extractUserIdFromKeycloakResponse - Invalid user creation response from Keycloak, missing or invalid Location header. [location: {}]", location);
+            throw new ProfileServiceException("Invalid user creation response from Keycloak, missing or invalid Location header.");
+        }
+        String[] parts = location.split("/");
+        String userId = parts[parts.length - 1];
+        log.debug("ProfileService::extractUserIdFromKeycloakResponse - Extracted userId successfully. [userId: {}]", userId);
+        return userId;
     }
 }

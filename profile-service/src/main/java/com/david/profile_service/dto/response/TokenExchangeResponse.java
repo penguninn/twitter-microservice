@@ -7,15 +7,18 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class TokenExchangeResponse {
+public class TokenExchangeResponse implements Serializable {
     private String accessToken;
     private String expiresIn;
     private String refreshExpiresIn;
+    private String refreshToken;
     private String tokenType;
     private String idToken;
     private String scope;

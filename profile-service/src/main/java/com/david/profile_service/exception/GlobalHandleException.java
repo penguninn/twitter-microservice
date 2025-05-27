@@ -27,4 +27,9 @@ public class GlobalHandleException {
         return new ApiResponse<>(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(ProfileNotFoundException.class)
+    public ApiResponse<?> handleProfileNotFoundException(ProfileNotFoundException ex) {
+        return new ApiResponse<>(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
 }

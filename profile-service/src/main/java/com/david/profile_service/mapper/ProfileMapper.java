@@ -1,18 +1,14 @@
 package com.david.profile_service.mapper;
 
-import com.david.profile_service.dto.request.ProfileRegisterRequest;
+import com.david.profile_service.dto.request.ProfileCreationRequest;
 import com.david.profile_service.dto.response.ProfileResponse;
 import com.david.profile_service.entity.Profile;
 
 public class ProfileMapper {
 
-    public static Profile mapToEntity(ProfileRegisterRequest request) {
+    public static Profile mapToEntity(ProfileCreationRequest request) {
         return Profile.builder()
-                .username(request.getUsername())
                 .email(request.getEmail())
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .dob(request.getDob())
                 .build();
     }
 
@@ -21,9 +17,15 @@ public class ProfileMapper {
                 .userId(profile.getUserId())
                 .username(profile.getUsername())
                 .email(profile.getEmail())
-                .firstName(profile.getFirstName())
-                .lastName(profile.getLastName())
-                .dob(profile.getDob())
+                .displayName(profile.getDisplayName())
+                .bio(profile.getBio())
+                .location(profile.getLocation())
+                .websiteUrl(profile.getWebsiteUrl())
+                .profileImageUrl(profile.getProfileImageUrl())
+                .bannerImageUrl(profile.getBannerImageUrl())
+                .dateOfBirth(profile.getDateOfBirth())
+                .gender(profile.isGender())
+                .joinDate(profile.getJoinDate().toString())
                 .build();
     }
 }

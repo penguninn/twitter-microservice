@@ -2,10 +2,13 @@ package com.david.profile_service.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
-public class ApiResponse <T> extends ResponseEntity<ApiResponse.Payload<T>> {
+import java.io.Serializable;
+
+public class ApiResponse <T> extends ResponseEntity<ApiResponse.Payload<T>> implements Serializable {
 
     public ApiResponse(HttpStatusCode status, String message) {
         super(new Payload<>(status.value(), message), status);
@@ -16,12 +19,16 @@ public class ApiResponse <T> extends ResponseEntity<ApiResponse.Payload<T>> {
     }
 
     @Getter
+    @Setter
     public static class Payload<T> {
-        private final int status;
+        private int status;
         @JsonInclude(JsonInclude.Include.NON_NULL)
-        private final String message;
+        private String message;
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private T result;
+
+        public Payload() {
+        }
 
         public Payload(int status, String message) {
             this.status = status;
