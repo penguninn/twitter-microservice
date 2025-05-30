@@ -11,16 +11,63 @@ spring:
           issuer-uri: http://localhost:9000/realms/twitter
   cloud:
     gateway:
+      httpclient:
+        response-timeout: 20s
+        connect-timeout: 5000
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins:
-              - "http://localhost:3000"
+            allowed-origin-patterns:
+              - "*"
             allowed-methods:
               - "*"
             allowed-headers:
               - "*"
             allow-credentials: true
+
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: profile-service
+          uri: lb://profile-service
+          predicates:
+            - Path=/profile-service/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: profile-circuit-breaker
+                fallbackUri: forward:/profile-fallback
+        - id: media-service
+          uri: lb://media-service
+          predicates:
+            - Path=/media-service/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: media-circuit-breaker
+                fallbackUri: forward:/media-fallback
+
+springdoc:
+  swagger-ui:
+    use-root-path: true
+    url: /swagger-ui.html
+    urls:
+      - name: API Gateway
+        url: /v3/api-docs
+      - name: Profile Service
+        url: /profile-service/v3/api-docs
+      - name: Media Service
+        url: /media-service/v3/api-docs
+
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 20s
+        cancel-running-future: false
 
 eureka:
   client:
@@ -43,4 +90,6 @@ info:
 
 logging:
   level:
+    org.springframework.cloud.gateway.filter: debug
     org.springframework.cloud.gateway: debug
+    io.github.resilience4j: debug

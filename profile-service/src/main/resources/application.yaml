@@ -13,16 +13,16 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: profile_service_user
     password: profile_service_user
-  servlet:
-    multipart:
-      max-request-size: 20MB
-      max-file-size: 10MB
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+  servlet:
+    multipart:
+      max-request-size: 20MB
+      max-file-size: 10MB
   security:
     oauth2:
       resourceserver:
@@ -30,6 +30,14 @@ spring:
           issuer-uri: http://localhost:9000/realms/twitter
   cache:
     type: redis
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
+    listener:
+      simple:
+        default-requeue-rejected: false
 
 eureka:
   client:
@@ -38,16 +46,23 @@ eureka:
   instance:
     prefer-ip-address: true
 
-
-idp:
-  url: http://localhost:9000
-  realm: twitter
-  client-id: twitter-client
-  client-secret: E3CNpb5g01PrhtbRLbe2cxqxoAAF3UYo
-
-client:
-  media-service:
-    url: http://localhost:8082
+app:
+  idp:
+    url: http://localhost:9000
+    realm: twitter
+    client-id: twitter-client
+    client-secret: E3CNpb5g01PrhtbRLbe2cxqxoAAF3UYo
+  feign-client:
+    media-service:
+      url: http://localhost:8082
+  rabbitmq:
+    exchange:
+      keycloak-events: keycloak.events.exchange
+    queue:
+      keycloak-events: keycloak.events.queue
+    routing-key:
+      user-registered: keycloak.user.registered
+      user-logged-in: keycloak.user.logged-in
 
 management:
   endpoints:

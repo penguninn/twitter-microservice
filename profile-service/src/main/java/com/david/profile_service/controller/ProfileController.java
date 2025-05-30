@@ -21,14 +21,14 @@ public class ProfileController {
 
     private final ProfileService profileService;
 
-    @PostMapping("/registration")
-    public ApiResponse<?> register(@Valid @RequestBody ProfileCreationRequest request) {
-        log.info("ProfileController::register execution started");
-        ProfileResponse profileResponse = profileService.register(request);
-        ApiResponse<?> response = new ApiResponse<>(HttpStatus.CREATED, "Register successfully", profileResponse);
-        log.info("ProfileController::register execution end");
-        return response;
-    }
+//    @PostMapping("/registration")
+//    public ApiResponse<?> register(@Valid @RequestBody ProfileCreationRequest request) {
+//        log.info("ProfileController::register execution started");
+//        ProfileResponse profileResponse = profileService.register(request);
+//        ApiResponse<?> response = new ApiResponse<>(HttpStatus.CREATED, "Register successfully", profileResponse);
+//        log.info("ProfileController::register execution end");
+//        return response;
+//    }
 
     @GetMapping("/{username}")
     public ApiResponse<?> getProfile(@Valid @PathVariable(name = "username") String username) {

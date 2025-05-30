@@ -7,13 +7,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class FallbackController {
 
-    @RequestMapping("/profile-fallback")
+    @RequestMapping(value = "/profile-fallback", method = {RequestMethod.GET, RequestMethod.POST})
     public String userFallback() {
         return "Profile service is not available";
     }
 
-    @RequestMapping(value = "/auth-fallback", method = {RequestMethod.GET, RequestMethod.POST})
-    public String authFallback() {
-        return "Auth service is not available";
+    @RequestMapping(value = "/media-fallback", method = {RequestMethod.GET, RequestMethod.POST})
+    public String mediaFallback() {
+        return "Media service is not available";
     }
 }

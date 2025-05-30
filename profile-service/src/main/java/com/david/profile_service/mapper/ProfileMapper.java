@@ -1,5 +1,6 @@
 package com.david.profile_service.mapper;
 
+import com.david.profile_service.dto.keycloak_events.UserEventDto;
 import com.david.profile_service.dto.request.ProfileCreationRequest;
 import com.david.profile_service.dto.response.ProfileResponse;
 import com.david.profile_service.entity.Profile;
@@ -26,6 +27,14 @@ public class ProfileMapper {
                 .dateOfBirth(profile.getDateOfBirth())
                 .gender(profile.isGender())
                 .joinDate(profile.getJoinDate().toString())
+                .build();
+    }
+
+    public static ProfileCreationRequest mapToCreationRequest(UserEventDto user) {
+        return ProfileCreationRequest.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .username(user.getUsername())
                 .build();
     }
 }

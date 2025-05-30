@@ -17,9 +17,9 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class ProfileCreationRequest implements Serializable {
 
-    @Size(min = 8, message = "Invalid password")
-    private String password;
+    private String userId;
 
-    @Email(message = "Invalid email")
+    private String username;
+
     private String email;
 }

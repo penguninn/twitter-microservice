@@ -1,4 +1,4 @@
-package com.david.mediaservice.exception;
+package com.david.media_service.exception;
 
 public class AzureStorageServiceException extends RuntimeException {
     public AzureStorageServiceException(String message) {

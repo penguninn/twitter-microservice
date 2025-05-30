@@ -1,4 +1,4 @@
-# docker-compose.service.yaml (twitter-clone-microservice)
+version: '3.8'
 
 services:
   keycloak:
@@ -16,12 +16,26 @@ services:
       KC_HTTP_ENABLED: true
       KC_HEALTH_ENABLED: true
       KC_METRICS_ENABLED: true
+
+      KC_EVENT_LISTENERS: default,rabbitmq-event-listener
+
+      KC_SPI_EVENTS_LISTENER_RABBITMQ_EVENT_LISTENER_HOST: rabbitmq
+      KC_SPI_EVENTS_LISTENER_RABBITMQ_EVENT_LISTENER_PORT: 5672
+      KC_SPI_EVENTS_LISTENER_RABBITMQ_EVENT_LISTENER_USERNAME: admin
+      KC_SPI_EVENTS_LISTENER_RABBITMQ_EVENT_LISTENER_PASSWORD: admin
+      KC_SPI_EVENTS_LISTENER_RABBITMQ_EVENT_LISTENER_VIRTUAL_HOST: /
+      KC_SPI_EVENTS_LISTENER_RABBITMQ_EVENT_LISTENER_EXCHANGE_NAME: keycloak.events.exchange
+      KC_SPI_EVENTS_LISTENER_RABBITMQ_EVENT_LISTENER_ROUTING_KEY_USER_REGISTERED: keycloak.user.registered
     ports:
       - "9000:8080"
     volumes:
       - ./themes:/opt/keycloak/themes/
+      - ./providers:/opt/keycloak/providers/
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   mysql:
     container_name: mysql
@@ -33,5 +47,70 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./mysql-init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost", "-uroot", "-p1234" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    ports:
+      - "10000:10000"   # Blob service
+      - "10001:10001"   # Queue service
+      - "10002:10002"   # Table service
+    command: [ "azurite", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0" ]
+    volumes:
+      - azurite-data:/data
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # RabbitMQ default port
+      - "15672:15672"   # RabbitMQ management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+#  azurite-init:
+#    image: mcr.microsoft.com/azure-cli
+#    container_name: azurite-init
+#    depends_on:
+#      azurite:
+#        condition: service_healthy
+#    environment:
+#      AZURE_STORAGE_CONNECTION_STRING: |
+#        DefaultEndpointsProtocol=http;
+#        AccountName=devstoreaccount1;
+#        AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;
+#        BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;
+#        QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;
+#        TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;
+#    entrypoint: |
+#      sh -c "\
+#        az storage container create --name mycontainer --connection-string \"$AZURE_STORAGE_CONNECTION_STRING\" && \
+#        az storage container set-permission --name mycontainer --public-access blob --connection-string \"$AZURE_STORAGE_CONNECTION_STRING\" \
+#      "
+#    restart: "no"
+
 volumes:
   mysql-data:
+  azurite-data:
+  redis-data:

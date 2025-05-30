@@ -1,6 +1,6 @@
-package com.david.mediaservice.exception;
+package com.david.media_service.exception;
 
-import com.david.mediaservice.dto.response.ApiResponse;
+import com.david.media_service.dto.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;

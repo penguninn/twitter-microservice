@@ -19,12 +19,6 @@
 <body class="h-screen w-screen bg-black">
 <div class="h-full w-full max-w-sm mx-auto flex flex-col justify-center items-center">
 
-    <!-- Error notification -->
-    <#if message?has_content>
-        <div class="rounded-md ${message.type == 'error'?then('bg-red-50 text-red-700', 'bg-green-50 text-green-700')} p-4">
-            ${kcSanitize(message.summary)?no_esc}
-        </div>
-    </#if>
     <div class="w-full flex flex-col justify-center items-center">
         <div class="w-full flex justify-start items-center mb-8">
             <span class="text-white text-4xl font-bold">Sign in to </span>
@@ -43,7 +37,8 @@
                     <#list social.providers as p>
                         <a href="${p.loginUrl}"
                            class="w-full relative overflow-hidden inline-flex justify-center py-2 px-4 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-800 group">
-                            <img class="h-5 w-5 relative z-10" src="${url.resourcesPath}/img/${p.alias}.svg" alt="${p.displayName}">
+                            <img class="h-5 w-5 relative z-10" src="${url.resourcesPath}/img/${p.alias}.svg"
+                                 alt="${p.displayName}">
                             <span class="ml-2 relative z-10">Sign in with ${p.displayName}</span>
                             <span class="absolute inset-0 bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-100 ease-in-out"
                                   aria-hidden="true"
@@ -107,7 +102,7 @@
         </div>
 
         <!-- Reset password -->
-        <#if !realm.resetPasswordAllowed>
+        <#if realm.resetPasswordAllowed>
             <div class="w-full text-sm">
                 <button type="button"
                         class="w-full relative overflow-hidden px-6 py-2 bg-black border border-gray-500 text-white font-bold rounded-full group"
@@ -125,11 +120,17 @@
         <!-- Sign up -->
         <div class="text-center mt-8">
             <span class="text-gray-400 text-sm">Don't have an account?</span>
-            <a href="${properties.registrationUrl!url.registrationUrl}"
+            <a href="${url.registrationUrl}"
                class="text-twitter-blue hover:underline ml-1">
                 Sign up
             </a>
         </div>
+        <!-- Error notification -->
+        <#if message?has_content>
+            <div class="rounded-md bg-transparent text-center w-full mt-2 <#if message.type == 'error'>bg-red-50 text-red-700<#else>bg-green-50 text-green-700</#if>">
+                ${kcSanitize(message.summary)?no_esc}
+            </div>
+        </#if>
     </div>
 </div>
 </body>

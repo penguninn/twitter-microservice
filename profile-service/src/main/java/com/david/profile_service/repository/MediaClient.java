@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
-@FeignClient(name = "media-service", url = "${client.media-service.url}")
+@FeignClient(name = "media-service", url = "${app.feign-client.media-service.url}")
 public interface MediaClient {
 
     @PostMapping(value = "/api/v1/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

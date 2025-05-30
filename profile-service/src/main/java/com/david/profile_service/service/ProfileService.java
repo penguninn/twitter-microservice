@@ -50,16 +50,16 @@ public class ProfileService {
     private final Keycloak keycloakAdminClient;
     private final CacheManager cacheManager;
 
-    @Value("${idp.realm}")
+    @Value("${app.idp.realm}")
     private String realm;
 
-    @Value("${idp.client-id}")
+    @Value("${app.idp.client-id}")
     private String clientId;
 
-    @Value("${idp.url}")
+    @Value("${app.idp.url}")
     private String serverUrl;
 
-    @Value("${idp.client-secret}")
+    @Value("${app.idp.client-secret}")
     private String clientSecret;
 
     @Cacheable(key = "#username")
@@ -103,40 +103,14 @@ public class ProfileService {
     @Transactional
     @CachePut(key = "#result.username")
     public ProfileResponse register(ProfileCreationRequest request) {
-        log.info("ProfileService::register - Execution started. [email: {}]", request.getEmail());
-        String userId;
         try {
-            UsersResource usersResource = keycloakAdminClient.realm(realm).users();
-            UserRepresentation userRepresentation = createUserRepresentation(request);
-
-            log.info("ProfileService::register - Creating user in Keycloak. [username: {}]", userRepresentation.getUsername());
-
-            try (Response keycloakResponse = usersResource.create(userRepresentation)) {
-                if (keycloakResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-                    userId = extractUserIdFromKeycloakResponse(keycloakResponse);
-                    log.info("ProfileService::register - User created successfully in Keycloak. [userId: {}]", userId);
-                } else {
-                    String reason = keycloakResponse.getStatusInfo().getReasonPhrase();
-                    String errorDetails = "";
-                    if (keycloakResponse.hasEntity()) {
-                        try {
-                            errorDetails = keycloakResponse.readEntity(String.class);
-                        } catch (Exception readEx) {
-                            log.warn("ProfileService::register - Could not read error entity from Keycloak response.", readEx);
-                        }
-                    }
-                    log.error("ProfileService::register - Failed to persist user to Keycloak. [status: {}, reason: {}, details: {}]",
-                            keycloakResponse.getStatus(), reason, errorDetails);
-                    throw new ProfileServiceException("Failed to persist user to Keycloak: " + reason + " " + errorDetails);
-                }
-            }
-
+            log.info("ProfileService::register - Execution started");
             Profile profile = ProfileMapper.mapToEntity(request);
-            profile.setUsername(request.getEmail());
-            profile.setUserId(userId);
+            profile.setEmail(request.getEmail());
+            profile.setUsername(request.getUsername());
+            profile.setUserId(request.getUserId());
             Profile savedProfile = profileRepository.save(profile);
-            log.info("ProfileService::register - Profile saved successfully in local DB. [profileId: {}, userId: {}]", savedProfile.getId(), userId);
-            log.info("ProfileService::register - Execution ended successfully. [userId: {}]", userId);
+            log.info("ProfileService::register - Execution ended successfully");
             return ProfileMapper.mapToDto(savedProfile);
         } catch (ProfileServiceException e) {
             throw e;
@@ -398,33 +372,5 @@ public class ProfileService {
             log.error("ProfileService::isValidOldPassword - Invalid old password. [username: {}]", username, e);
             return false;
         }
-    }
-
-    private UserRepresentation createUserRepresentation(ProfileCreationRequest request) {
-        UserRepresentation userRepresentation = new UserRepresentation();
-        userRepresentation.setUsername(request.getEmail());
-        userRepresentation.setEnabled(true);
-        userRepresentation.setEmail(request.getEmail());
-        userRepresentation.setEmailVerified(false);
-
-        CredentialRepresentation credential = new CredentialRepresentation();
-        credential.setType(CredentialRepresentation.PASSWORD);
-        credential.setTemporary(false);
-        credential.setValue(request.getPassword());
-        userRepresentation.setCredentials(List.of(credential));
-        return userRepresentation;
-    }
-
-    private String extractUserIdFromKeycloakResponse(Response response) {
-        log.debug("ProfileService::extractUserIdFromKeycloakResponse - Attempting to extract userId from Keycloak response. [status: {}]", response.getStatus());
-        String location = response.getLocation() != null ? response.getLocation().getPath() : null;
-        if (location == null || !location.contains("/")) {
-            log.error("ProfileService::extractUserIdFromKeycloakResponse - Invalid user creation response from Keycloak, missing or invalid Location header. [location: {}]", location);
-            throw new ProfileServiceException("Invalid user creation response from Keycloak, missing or invalid Location header.");
-        }
-        String[] parts = location.split("/");
-        String userId = parts[parts.length - 1];
-        log.debug("ProfileService::extractUserIdFromKeycloakResponse - Extracted userId successfully. [userId: {}]", userId);
-        return userId;
     }
 }

@@ -1,6 +1,6 @@
-package com.david.mediaservice.service;
+package com.david.media_service.service;
 
-import com.david.mediaservice.exception.ImageProcessingServiceException;
+import com.david.media_service.exception.ImageProcessingServiceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
