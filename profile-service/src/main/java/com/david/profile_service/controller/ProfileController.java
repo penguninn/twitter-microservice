@@ -1,6 +1,9 @@
 package com.david.profile_service.controller;
 
-import com.david.profile_service.dto.request.*;
+import com.david.profile_service.dto.request.ChangePasswordRequest;
+import com.david.profile_service.dto.request.EmailUpdateRequest;
+import com.david.profile_service.dto.request.ProfileUpdateRequest;
+import com.david.profile_service.dto.request.UsernameUpdateRequest;
 import com.david.profile_service.dto.response.ApiResponse;
 import com.david.profile_service.dto.response.ProfileResponse;
 import com.david.profile_service.service.ProfileService;

@@ -9,9 +9,11 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserEventDto {
+public class UserRegisterEventDto {
     private String userId;
     private String username;
     private String email;
+    private String displayName;
+    private String profileImgUrl;
     private String eventType;
 }

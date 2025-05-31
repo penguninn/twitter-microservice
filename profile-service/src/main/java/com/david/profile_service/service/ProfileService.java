@@ -1,6 +1,10 @@
 package com.david.profile_service.service;
 
-import com.david.profile_service.dto.request.*;
+import com.david.profile_service.dto.keycloak_events.UserRegisterEventDto;
+import com.david.profile_service.dto.request.ChangePasswordRequest;
+import com.david.profile_service.dto.request.EmailUpdateRequest;
+import com.david.profile_service.dto.request.ProfileUpdateRequest;
+import com.david.profile_service.dto.request.UsernameUpdateRequest;
 import com.david.profile_service.dto.response.ApiResponse;
 import com.david.profile_service.dto.response.ProfileResponse;
 import com.david.profile_service.entity.Profile;
@@ -9,14 +13,12 @@ import com.david.profile_service.exception.ProfileServiceException;
 import com.david.profile_service.mapper.ProfileMapper;
 import com.david.profile_service.repository.MediaClient;
 import com.david.profile_service.repository.ProfileRepository;
-import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +26,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -102,13 +103,16 @@ public class ProfileService {
 
     @Transactional
     @CachePut(key = "#result.username")
-    public ProfileResponse register(ProfileCreationRequest request) {
+    public ProfileResponse register(UserRegisterEventDto request) {
         try {
             log.info("ProfileService::register - Execution started");
-            Profile profile = ProfileMapper.mapToEntity(request);
-            profile.setEmail(request.getEmail());
-            profile.setUsername(request.getUsername());
-            profile.setUserId(request.getUserId());
+            Profile profile = Profile.builder()
+                    .userId(request.getUserId())
+                    .username(request.getUsername())
+                    .email(request.getEmail())
+                    .displayName(request.getDisplayName())
+                    .profileImageUrl(request.getProfileImgUrl())
+                    .build();
             Profile savedProfile = profileRepository.save(profile);
             log.info("ProfileService::register - Execution ended successfully");
             return ProfileMapper.mapToDto(savedProfile);

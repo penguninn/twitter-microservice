@@ -1,8 +1,8 @@
 package com.david.event;
 
+import com.david.dto.UserEventDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.ConnectionFactory;
-import com.david.dto.UserEventDto;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
@@ -44,8 +44,10 @@ public class RabbitMqEventListenerProvider implements EventListenerProvider {
                 String userId = userModel.getId();
                 String username = userModel.getUsername();
                 String email = userModel.getEmail();
+                String displayName = userModel.getFirstAttribute("name");
+                String profileImgUrl = userModel.getFirstAttribute("avatar");
 
-                UserEventDto userEventDto = new UserEventDto(userId, username, email, event.getType().name());
+                UserEventDto userEventDto = new UserEventDto(displayName, email, event.getType().toString(), profileImgUrl, userId, username);
 
                 try {
                     String message = objectMapper.writeValueAsString(userEventDto);

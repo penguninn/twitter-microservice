@@ -14,16 +14,6 @@ spring:
       httpclient:
         response-timeout: 20s
         connect-timeout: 5000
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origin-patterns:
-              - "*"
-            allowed-methods:
-              - "*"
-            allowed-headers:
-              - "*"
-            allow-credentials: true
 
       discovery:
         locator:
@@ -93,3 +83,8 @@ logging:
     org.springframework.cloud.gateway.filter: debug
     org.springframework.cloud.gateway: debug
     io.github.resilience4j: debug
+    org.springframework.web: debug
+    org.springframework.security: debug
+    org.springframework.security.web: debug
+    org.springframework.web.cors: debug
+    org.springframework.web.filter.CorsFilter: debug

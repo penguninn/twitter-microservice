@@ -81,3 +81,5 @@ logging:
     org.springframework.web: debug
     org.springframework.security: debug
     org.springframework.security.web: debug
+    org.springframework.web.cors: debug
+    org.springframework.web.filter.CorsFilter: debug
