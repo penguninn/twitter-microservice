@@ -1,4 +1,4 @@
-package com.david.profile_service.dto.keycloak_events;
+package com.david.profile_service.dto.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

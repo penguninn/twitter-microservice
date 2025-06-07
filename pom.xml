@@ -25,6 +25,7 @@
         <module>registry-service</module>
         <module>profile-service</module>
         <module>media-service</module>
+        <module>tweet-service</module>
     </modules>
 
     <dependencyManagement>

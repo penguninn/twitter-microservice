@@ -52,7 +52,7 @@ app:
     realm: twitter
     client-id: twitter-client
     client-secret: E3CNpb5g01PrhtbRLbe2cxqxoAAF3UYo
-  feign-client:
+  services:
     media-service:
       url: http://localhost:8082
   rabbitmq:
@@ -68,18 +68,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: ["health", "routes", "gateway", "metrics", "info"]
+        include: ["health", "routes", "metrics", "info"]
   info:
     env:
       enabled: true
 info:
   app:
     name: profile-service
-
-logging:
-  level:
-    org.springframework.web: debug
-    org.springframework.security: debug
-    org.springframework.security.web: debug
-    org.springframework.web.cors: debug
-    org.springframework.web.filter.CorsFilter: debug
+#
+#logging:
+#  level:
+#    org.springframework.web: debug
+#    org.springframework.security: debug
+#    org.springframework.security.web: debug
+#    org.springframework.web.cors: debug
+#    org.springframework.web.filter.CorsFilter: debug

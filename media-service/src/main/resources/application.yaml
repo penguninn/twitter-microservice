@@ -18,7 +18,7 @@ spring:
             BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;
             QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;
             TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"
-          container-name: twitter-image
+          container-name: twitter
   security:
     oauth2:
       resourceserver:

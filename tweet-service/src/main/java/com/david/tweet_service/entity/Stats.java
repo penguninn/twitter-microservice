@@ -1,0 +1,13 @@
+package com.david.tweet_service.entity;
+
+import lombok.*;
+
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class Stats {
+
+    private long likesCount = 0;
+}

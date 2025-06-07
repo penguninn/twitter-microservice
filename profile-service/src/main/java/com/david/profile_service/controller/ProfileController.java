@@ -24,21 +24,30 @@ public class ProfileController {
 
     private final ProfileService profileService;
 
-//    @PostMapping("/registration")
-//    public ApiResponse<?> register(@Valid @RequestBody ProfileCreationRequest request) {
-//        log.info("ProfileController::register execution started");
-//        ProfileResponse profileResponse = profileService.register(request);
-//        ApiResponse<?> response = new ApiResponse<>(HttpStatus.CREATED, "Register successfully", profileResponse);
-//        log.info("ProfileController::register execution end");
-//        return response;
-//    }
+    @GetMapping("/exists/{userId}")
+    public ApiResponse<?> checkProfileExists(@Valid @PathVariable(name = "userId") String userId) {
+        log.info("ProfileController::checkProfileExists execution started");
+        boolean exists = profileService.checkProfileExists(userId);
+        ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK, "Check profile existence successfully", exists);
+        log.info("ProfileController::checkProfileExists execution ended");
+        return response;
+    }
 
-    @GetMapping("/{username}")
-    public ApiResponse<?> getProfile(@Valid @PathVariable(name = "username") String username) {
-        log.info("ProfileController::getProfile execution started");
-        ProfileResponse profileResponse = profileService.getProfile(username);
+    @GetMapping("/i/{userId}")
+    public ApiResponse<?> getProfileById(@Valid @PathVariable(name = "userId") String userId) {
+        log.info("ProfileController::getProfileById execution started");
+        ProfileResponse profileResponse = profileService.getProfileById(userId);
         ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK, "Get profile successfully", profileResponse);
-        log.info("ProfileController::getProfile execution ended");
+        log.info("ProfileController::getProfileById execution ended");
+        return response;
+    }
+
+    @GetMapping("/u/{username}")
+    public ApiResponse<?> getProfileUsername(@Valid @PathVariable(name = "username") String username) {
+        log.info("ProfileController::getProfileByUsername execution started");
+        ProfileResponse profileResponse = profileService.getProfileByUsername(username);
+        ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK, "Get profile successfully", profileResponse);
+        log.info("ProfileController::getProfileByUsername execution ended");
         return response;
     }
 

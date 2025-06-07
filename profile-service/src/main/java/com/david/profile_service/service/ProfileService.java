@@ -1,11 +1,12 @@
 package com.david.profile_service.service;
 
-import com.david.profile_service.dto.keycloak_events.UserRegisterEventDto;
+import com.david.profile_service.dto.event.UserRegisterEventDto;
 import com.david.profile_service.dto.request.ChangePasswordRequest;
 import com.david.profile_service.dto.request.EmailUpdateRequest;
 import com.david.profile_service.dto.request.ProfileUpdateRequest;
 import com.david.profile_service.dto.request.UsernameUpdateRequest;
-import com.david.profile_service.dto.response.ApiResponse;
+import com.david.profile_service.dto.response.FeignApiResponse;
+import com.david.profile_service.dto.response.MediaResponse;
 import com.david.profile_service.dto.response.ProfileResponse;
 import com.david.profile_service.entity.Profile;
 import com.david.profile_service.exception.ProfileNotFoundException;
@@ -23,9 +24,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,7 +42,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@CacheConfig(cacheNames = "profileByUsername")
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
@@ -63,20 +61,39 @@ public class ProfileService {
     @Value("${app.idp.client-secret}")
     private String clientSecret;
 
-    @Cacheable(key = "#username")
-    public ProfileResponse getProfile(String username) {
-        log.info("ProfileService::getProfile - Execution started. [username: {}]", username);
+    @Cacheable(cacheNames = "cacheProfileExists", key = "#userId")
+    public boolean checkProfileExists(String userId) {
+        log.info("ProfileService::checkProfileExists - Execution started. [userId: {}]", userId);
+        boolean exists = profileRepository.existsByUserId(userId);
+        log.info("ProfileService::checkProfileExists - Execution ended successfully. [userId: {}, exists: {}]", userId, exists);
+        return exists;
+    }
+
+    @Cacheable(cacheNames = "cacheProfileById", key = "#userId")
+    public ProfileResponse getProfileById(String userId) {
+        log.info("ProfileService::getProfileById - Execution started. [userId: {}]", userId);
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> {
+                    log.warn("ProfileService::getProfileById - Profile not found for userId: {}", userId);
+                    return new ProfileNotFoundException("Profile not found with userId: " + userId);
+                });
+        log.info("ProfileService::getProfileById - Execution ended successfully. [userId: {}]", userId);
+        return ProfileMapper.mapToDto(profile);
+    }
+
+    @Cacheable(cacheNames = "cacheProfileByUsername", key = "#username")
+    public ProfileResponse getProfileByUsername(String username) {
+        log.info("ProfileService::getProfileByUsername - Execution started. [username: {}]", username);
         Profile profile = profileRepository.findByUsername(username)
                 .orElseThrow(() -> {
-                    log.warn("ProfileService::getProfile - Profile not found for username: {}", username);
+                    log.warn("ProfileService::getProfileByUsername - Profile not found for username: {}", username);
                     return new ProfileNotFoundException("Profile not found with username: " + username);
                 });
-        log.info("ProfileService::getProfile - Execution ended successfully. [username: {}]", username);
+        log.info("ProfileService::getProfileByUsername - Execution ended successfully. [username: {}]", username);
         return ProfileMapper.mapToDto(profile);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @Cacheable(cacheNames = "allProfiles", key = "{#page, #size, #sortBy}")
     public List<ProfileResponse> getAllProfile(int page, int size, String sortBy) {
         log.info("ProfileService::getAllProfile - Execution started. [page: {}, size: {}, sortBy: {}]", page, size, sortBy);
         try {
@@ -102,7 +119,7 @@ public class ProfileService {
     }
 
     @Transactional
-    @CachePut(key = "#result.username")
+    @CachePut(cacheNames = "cacheProfileById", key = "#result.userId")
     public ProfileResponse register(UserRegisterEventDto request) {
         try {
             log.info("ProfileService::register - Execution started");
@@ -126,7 +143,12 @@ public class ProfileService {
 
     @Transactional
     @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
-    @CachePut(key = "#result.username")
+    @Caching(
+            put = {
+                    @CachePut(cacheNames = "cacheProfileById", key = "#result.userId"),
+                    @CachePut(cacheNames = "cacheProfileByUsername", key = "#result.username")
+            }
+    )
     public ProfileResponse updateUsername(String userId, UsernameUpdateRequest request) {
         log.info("ProfileService::updateUsername - Execution started. [userId: {}, newUsername: {}]", userId, request.getUsername());
         try {
@@ -164,7 +186,7 @@ public class ProfileService {
 
             if(oldUsername != null && !oldUsername.equals(request.getUsername())) {
                 log.info("ProfileService::updateUsername - Updating cache for username: {}", oldUsername);
-                cacheManager.getCache("profileByUsername").evict(oldUsername);
+                cacheManager.getCache("cacheProfileByUsername").evict(oldUsername);
             }
 
             ProfileResponse updatedResponse = ProfileMapper.mapToDto(updatedProfile);
@@ -180,7 +202,7 @@ public class ProfileService {
 
     @Transactional
     @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
-    @CachePut(key = "#result.username")
+    @CachePut(cacheNames = "cacheProfileById", key = "#result.userId")
     public ProfileResponse updateEmail(String userId, EmailUpdateRequest request) {
         log.info("ProfileService::updateEmail - Execution started. [userId: {}, newEmail: {}]", userId, request.getEmail());
         try {
@@ -201,13 +223,7 @@ public class ProfileService {
                 userRepresentation.setEmail(request.getEmail());
                 userRepresentation.setEmailVerified(false);
                 userResource.update(userRepresentation);
-//                log.info("ProfileService::updateEmail - Email updated successfully in Keycloak. Verification set to false. [userId: {}]", userId);
-//                try {
-//                    userResource.sendVerifyEmail();
-//                    log.info("ProfileService::updateEmail - Sent email verification request to new email. [userId: {}]", userId);
-//                } catch (Exception e) {
-//                    log.warn("ProfileService::updateEmail - Failed to send verification email after Keycloak update. [userId: {}]", userId, e);
-//                }
+
             } catch (jakarta.ws.rs.NotFoundException e) {
                 log.error("ProfileService::updateEmail - User not found in Keycloak. [userId: {}]", userId, e);
                 throw new ProfileNotFoundException("User not found in Keycloak with ID: " + userId, e);
@@ -231,7 +247,7 @@ public class ProfileService {
 
     @Transactional
     @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
-    @CachePut(key = "#result.username")
+    @CachePut(cacheNames = "cacheProfileById", key = "#result.userId")
     public ProfileResponse updateProfile(String userId, ProfileUpdateRequest request, MultipartFile profileImage, MultipartFile bannerImage) {
         log.info("ProfileService::updateProfile - Execution started. [userId: {}]", userId);
         try {
@@ -245,9 +261,10 @@ public class ProfileService {
             if (profileImage != null && !profileImage.isEmpty()) {
                 log.info("ProfileService::updateProfile - Attempting to upload profile image. [userId: {}]", userId);
                 try {
-                    ApiResponse.Payload<String> mediaResponse = mediaClient.uploadImage(profileImage).getBody();
-                    if (mediaResponse != null && mediaResponse.getResult() != null && !mediaResponse.getResult().isEmpty()) {
-                        finalProfileImgUrl = mediaResponse.getResult();
+                    MultipartFile[] profileImages = new MultipartFile[]{profileImage};
+                    FeignApiResponse<List<MediaResponse>> mediaResponse = mediaClient.uploadFiles(profileImages, "IMAGE");
+                    if (mediaResponse != null) {
+                        finalProfileImgUrl = mediaResponse.getResult().getFirst().getMediaUrl();
                         log.info("ProfileService::updateProfile - Profile image updated successfully. [userId: {}, newUrl: {}]", userId, finalProfileImgUrl);
                     } else {
                         log.warn("ProfileService::updateProfile - Profile image upload returned no URL. [userId: {}]", userId);
@@ -260,9 +277,10 @@ public class ProfileService {
             if (bannerImage != null && !bannerImage.isEmpty()) {
                 log.info("ProfileService::updateProfile - Attempting to upload banner image. [userId: {}]", userId);
                 try {
-                    ApiResponse.Payload<String> mediaResponse = mediaClient.uploadImage(bannerImage).getBody();
-                    if (mediaResponse != null && mediaResponse.getResult() != null && !mediaResponse.getResult().isEmpty()) {
-                        finalBannerImageUrl = mediaResponse.getResult();
+                    MultipartFile[] bannerImages = new MultipartFile[]{bannerImage};
+                    FeignApiResponse<List<MediaResponse>> mediaResponse = mediaClient.uploadFiles(bannerImages, "IMAGE");
+                    if (mediaResponse != null) {
+                        finalBannerImageUrl = mediaResponse.getResult().getFirst().getMediaUrl();
                         log.info("ProfileService::updateProfile - Banner image updated successfully. [userId: {}, newUrl: {}]", userId, finalBannerImageUrl);
                     } else {
                         log.warn("ProfileService::updateProfile - Banner image upload returned no URL. [userId: {}]", userId);
@@ -335,7 +353,7 @@ public class ProfileService {
                         log.warn("ProfileService::deleteProfile - Profile not found in local DB. [userId: {}]", userId);
                         return new ProfileNotFoundException("Not found profile with user-id: " + userId);
                     });
-
+            String oldUsername = existingProfile.getUsername();
             try {
                 log.info("ProfileService::deleteProfile - Deleting user from Keycloak. [userId: {}]", userId);
                 keycloakAdminClient.realm(realm).users().delete(userId);
@@ -349,7 +367,8 @@ public class ProfileService {
             }
 
             profileRepository.delete(existingProfile);
-            cacheManager.getCache("profileByUsername").evict(existingProfile.getUsername());
+            cacheManager.getCache("cacheProfileByUsername").evict(oldUsername);
+            cacheManager.getCache("cacheProfileById").evict(userId);
             log.info("ProfileService::deleteProfile - Profile deleted successfully from local DB. [userId: {}]", userId);
         } catch (ProfileServiceException | ProfileNotFoundException e) {
             throw e;

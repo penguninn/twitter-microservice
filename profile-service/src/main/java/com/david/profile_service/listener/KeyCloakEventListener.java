@@ -1,6 +1,6 @@
 package com.david.profile_service.listener;
 
-import com.david.profile_service.dto.keycloak_events.UserRegisterEventDto;
+import com.david.profile_service.dto.event.UserRegisterEventDto;
 import com.david.profile_service.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

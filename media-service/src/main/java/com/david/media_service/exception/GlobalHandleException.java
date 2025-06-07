@@ -15,8 +15,8 @@ public class GlobalHandleException {
         return new ApiResponse<>(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(ImageProcessingServiceException.class)
-    public ApiResponse<?> handleImageServiceExceptions(ImageProcessingServiceException ex) {
+    @ExceptionHandler(MediaServiceException.class)
+    public ApiResponse<?> handleImageServiceExceptions(MediaServiceException ex) {
         return new ApiResponse<>(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

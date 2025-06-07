@@ -14,7 +14,6 @@ spring:
       httpclient:
         response-timeout: 20s
         connect-timeout: 5000
-
       discovery:
         locator:
           enabled: true
@@ -39,6 +38,16 @@ spring:
               args:
                 name: media-circuit-breaker
                 fallbackUri: forward:/media-fallback
+        - id: tweet-service
+          uri: lb://tweet-service
+          predicates:
+            - Path=/tweet-service/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: tweet-circuit-breaker
+                fallbackUri: forward:/tweet-fallback
 
 springdoc:
   swagger-ui:
@@ -51,6 +60,8 @@ springdoc:
         url: /profile-service/v3/api-docs
       - name: Media Service
         url: /media-service/v3/api-docs
+      - name: Tweet Service
+        url: /tweet-service/v3/api-docs
 
 resilience4j:
   timelimiter:

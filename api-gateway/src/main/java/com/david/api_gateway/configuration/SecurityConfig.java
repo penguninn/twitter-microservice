@@ -27,8 +27,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/webjars/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/profile-service/**").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/profile-service/api/v1/profiles/registration").permitAll()
                         .pathMatchers(HttpMethod.GET, "/media-service/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/tweet-service/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

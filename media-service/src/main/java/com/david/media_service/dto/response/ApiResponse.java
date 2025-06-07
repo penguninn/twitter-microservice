@@ -6,7 +6,9 @@ import lombok.Setter;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
-public class ApiResponse <T> extends ResponseEntity<ApiResponse.Payload<T>> {
+import java.io.Serializable;
+
+public class ApiResponse <T> extends ResponseEntity<ApiResponse.Payload<T>> implements Serializable {
 
     public ApiResponse(HttpStatusCode status, String message) {
         super(new Payload<>(status.value(), message), status);

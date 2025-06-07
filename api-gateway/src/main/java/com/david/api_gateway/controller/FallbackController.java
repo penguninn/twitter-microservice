@@ -16,4 +16,9 @@ public class FallbackController {
     public String mediaFallback() {
         return "Media service is not available";
     }
+
+    @RequestMapping(value = "/tweet-fallback", method = {RequestMethod.GET, RequestMethod.POST})
+    public String tweetFallback() {
+        return "Tweet service is not available";
+    }
 }

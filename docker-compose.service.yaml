@@ -54,16 +54,23 @@ services:
       retries: 5
       start_period: 30s
 
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
-    container_name: azurite
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
     ports:
-      - "10000:10000"   # Blob service
-      - "10001:10001"   # Queue service
-      - "10002:10002"   # Table service
-    command: [ "azurite", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0" ]
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 1234
+      MONGO_INITDB_DATABASE: tweet_service
     volumes:
-      - azurite-data:/data
+      - mongo-data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "mongodb://root:1234@localhost:27017/admin", "--eval", "process.exit(db.adminCommand('ping').ok === 1 ? 0 : 1)" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   rabbitmq:
     image: rabbitmq:management
@@ -88,6 +95,23 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    ports:
+      - "10000:10000"   # Blob service
+      - "10001:10001"   # Queue service
+      - "10002:10002"   # Table service
+    command: [ "azurite", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0" ]
+    volumes:
+      - azurite-data:/data
 
 #  azurite-init:
 #    image: mcr.microsoft.com/azure-cli
@@ -114,3 +138,7 @@ volumes:
   mysql-data:
   azurite-data:
   redis-data:
+  mongo-data:
+
+#$env:AZURE_STORAGE_CONNECTION_STRING = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+#az storage container set-permission --name twitter --public-access blob --connection-string "$env:AZURE_STORAGE_CONNECTION_STRING"

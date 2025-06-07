@@ -20,16 +20,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
-        http.cors(cors -> cors
-                .configurationSource(request -> {
-                    CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowCredentials(true);
-                    config.setAllowedOrigins(List.of("http://localhost:8080"));
-                    config.addAllowedHeader("*");
-                    config.addAllowedMethod("*");
-                    return config;
-                })
-        );
         http.oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt
                         .jwtAuthenticationConverter(jwtAuthenticationConverter())
