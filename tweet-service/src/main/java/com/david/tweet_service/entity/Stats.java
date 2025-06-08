@@ -9,5 +9,6 @@ import lombok.*;
 @NoArgsConstructor
 public class Stats {
 
+    @Builder.Default
     private long likesCount = 0;
 }

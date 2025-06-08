@@ -1,7 +1,6 @@
 package com.david.tweet_service.entity;
 
 import lombok.*;
-import org.springframework.http.MediaType;
 
 @Getter
 @Setter

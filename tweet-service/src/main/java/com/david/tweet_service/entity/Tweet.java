@@ -1,6 +1,5 @@
 package com.david.tweet_service.entity;
 
-import com.david.tweet_service.dto.response.MediaResponse;
 import com.david.tweet_service.enums.Visibility;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -26,17 +25,19 @@ public class Tweet {
 
     private String content;
 
-    private List<MediaResponse> media = new ArrayList<>();
+    @Builder.Default
+    private List<Media> mediaItems = new ArrayList<>();
 
+    @Builder.Default
     private List<String> hashtags = new ArrayList<>();
 
-    private Stats stats = Stats.builder()
-            .likesCount(0)
-            .build();
+    @Builder.Default
+    private Stats stats = new Stats();
 
+    @Builder.Default
     private List<String> likedBy = new ArrayList<>();
 
-    private Visibility visibility = Visibility.PUBLIC;
+    private Visibility visibility;
 
     @CreatedDate
     private long createdAt;

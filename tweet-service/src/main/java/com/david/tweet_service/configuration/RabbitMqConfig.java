@@ -1,8 +1,6 @@
 package com.david.tweet_service.configuration;
 
-import jakarta.validation.Valid;
-import org.springframework.amqp.core.ExchangeBuilder;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,5 +30,47 @@ public class RabbitMqConfig {
         return ExchangeBuilder.topicExchange(tweetEventsExchange)
                 .durable(true)
                 .build();
+    }
+
+    // Tweet created
+    @Bean
+    public Queue tweetCreatedQueue() {
+        return QueueBuilder.durable(tweetCreatedQueue)
+                .build();
+    }
+
+    @Bean
+    public Binding tweetCreatedBinding() {
+        return BindingBuilder.bind(tweetCreatedQueue())
+                .to(tweetEventsExchange())
+                .with(tweetCreatedRoutingKey);
+    }
+
+    // Tweet deleted
+    @Bean
+    public Queue tweetDeletedQueue() {
+        return QueueBuilder.durable(tweetDeletedQueue)
+                .build();
+    }
+
+    @Bean
+    public Binding tweetDeletedBinding() {
+        return BindingBuilder.bind(tweetDeletedQueue())
+                .to(tweetEventsExchange())
+                .with(tweetDeletedRoutingKey);
+    }
+
+    // Tweet liked
+    @Bean
+    public Queue tweetLikedQueue() {
+        return QueueBuilder.durable(tweetLikedQueue)
+                .build();
+    }
+
+    @Bean
+    public Binding tweetLikedBinding() {
+        return BindingBuilder.bind(tweetLikedQueue())
+                .to(tweetEventsExchange())
+                .with(tweetLikedRoutingKey);
     }
 }

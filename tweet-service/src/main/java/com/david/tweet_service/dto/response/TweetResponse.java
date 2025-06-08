@@ -2,14 +2,12 @@ package com.david.tweet_service.dto.response;
 
 import com.david.tweet_service.entity.Stats;
 import com.david.tweet_service.enums.Visibility;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

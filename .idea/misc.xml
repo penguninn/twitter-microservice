@@ -17,6 +17,8 @@
         <option value="$PROJECT_DIR$/keycloak-event-listener-spi-rabbitmq/pom.xml" />
         <option value="$PROJECT_DIR$/demo/pom.xml" />
         <option value="$PROJECT_DIR$/tweet-service/pom.xml" />
+        <option value="$PROJECT_DIR$/notification-service/pom.xml" />
+        <option value="$PROJECT_DIR$/comment-service/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
