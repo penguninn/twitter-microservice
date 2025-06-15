@@ -1,7 +1,7 @@
 package com.david.tweet_service.dto.event;
 
-import com.david.tweet_service.dto.response.MediaResponse;
-import com.david.tweet_service.enums.Visibility;
+import com.david.common.dto.media.MediaResponse;
+import com.david.common.enums.Visibility;
 import lombok.*;
 
 import java.io.Serializable;

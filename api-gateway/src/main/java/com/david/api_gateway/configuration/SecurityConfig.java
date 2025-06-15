@@ -29,6 +29,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/profile-service/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/media-service/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/tweet-service/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/comment-service/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

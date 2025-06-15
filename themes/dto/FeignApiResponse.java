@@ -1,4 +1,4 @@
-package com.david.tweet_service.dto.response;
+package com.david.common.dto;
 
 import lombok.Getter;
 import lombok.Setter;

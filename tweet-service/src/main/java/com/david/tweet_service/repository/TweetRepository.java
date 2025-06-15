@@ -1,7 +1,7 @@
 package com.david.tweet_service.repository;
 
+import com.david.common.enums.Visibility;
 import com.david.tweet_service.entity.Tweet;
-import com.david.tweet_service.enums.Visibility;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

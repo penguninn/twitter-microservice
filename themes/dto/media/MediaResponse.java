@@ -1,4 +1,4 @@
-package com.david.tweet_service.dto.response;
+package com.david.common.dto.media;
 
 import lombok.*;
 

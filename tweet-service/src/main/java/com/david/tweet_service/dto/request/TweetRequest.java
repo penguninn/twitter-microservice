@@ -1,6 +1,6 @@
 package com.david.tweet_service.dto.request;
 
-import com.david.tweet_service.enums.Visibility;
+import com.david.common.enums.Visibility;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 

@@ -1,7 +1,7 @@
 package com.david.tweet_service.repository;
 
-import com.david.tweet_service.dto.response.FeignApiResponse;
-import com.david.tweet_service.dto.response.MediaResponse;
+import com.david.common.dto.FeignApiResponse;
+import com.david.common.dto.media.MediaResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;

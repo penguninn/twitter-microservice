@@ -48,7 +48,16 @@ spring:
               args:
                 name: tweet-circuit-breaker
                 fallbackUri: forward:/tweet-fallback
-
+        - id: comment-service
+          uri: lb://comment-service
+          predicates:
+            - Path=/comment-service/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: comment-circuit-breaker
+                fallbackUri: forward:/comment-fallback
 springdoc:
   swagger-ui:
     use-root-path: true
@@ -62,6 +71,8 @@ springdoc:
         url: /media-service/v3/api-docs
       - name: Tweet Service
         url: /tweet-service/v3/api-docs
+      - name: Comment Service
+        url: /comment-service/v3/api-docs
 
 resilience4j:
   timelimiter:
@@ -89,13 +100,14 @@ info:
   app:
     name: api-gateway
 
-logging:
-  level:
-    org.springframework.cloud.gateway.filter: debug
-    org.springframework.cloud.gateway: debug
-    io.github.resilience4j: debug
-    org.springframework.web: debug
-    org.springframework.security: debug
-    org.springframework.security.web: debug
-    org.springframework.web.cors: debug
-    org.springframework.web.filter.CorsFilter: debug
+#logging:
+#  level:
+#    application: debug
+#    org.springframework.cloud.gateway.filter: debug
+#    org.springframework.cloud.gateway: debug
+#    io.github.resilience4j: debug
+#    org.springframework.web: debug
+#    org.springframework.security: debug
+#    org.springframework.security.web: debug
+#    org.springframework.web.cors: debug
+#    org.springframework.web.filter.CorsFilter: debug

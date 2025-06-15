@@ -1,6 +1,6 @@
 package com.david.tweet_service.mapper;
 
-import com.david.tweet_service.dto.response.MediaResponse;
+import com.david.common.dto.media.MediaResponse;
 import com.david.tweet_service.entity.Media;
 import org.mapstruct.Mapper;
 

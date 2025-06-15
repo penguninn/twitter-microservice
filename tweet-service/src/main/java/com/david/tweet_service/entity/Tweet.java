@@ -1,6 +1,6 @@
 package com.david.tweet_service.entity;
 
-import com.david.tweet_service.enums.Visibility;
+import com.david.common.enums.Visibility;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;

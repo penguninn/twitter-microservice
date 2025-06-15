@@ -1,4 +1,4 @@
-package com.david.tweet_service.dto.response;
+package com.david.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;

@@ -19,10 +19,15 @@
         <option value="$PROJECT_DIR$/tweet-service/pom.xml" />
         <option value="$PROJECT_DIR$/notification-service/pom.xml" />
         <option value="$PROJECT_DIR$/comment-service/pom.xml" />
+        <option value="$PROJECT_DIR$/comment-dto/pom.xml" />
+        <option value="$PROJECT_DIR$/common-dto/pom.xml" />
+        <option value="$PROJECT_DIR$/common/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/comment-dto/pom.xml" />
+        <option value="$PROJECT_DIR$/common-dto/pom.xml" />
         <option value="$PROJECT_DIR$/demo/pom.xml" />
         <option value="$PROJECT_DIR$/document-service/pom.xml" />
         <option value="$PROJECT_DIR$/untitled/pom.xml" />

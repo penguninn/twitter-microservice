@@ -1,7 +1,7 @@
-package com.david.tweet_service.dto.response;
+package com.david.common.dto.tweet;
 
-import com.david.tweet_service.entity.Stats;
-import com.david.tweet_service.enums.Visibility;
+import com.david.common.dto.media.MediaResponse;
+import com.david.common.enums.Visibility;
 import lombok.*;
 
 import java.util.List;
@@ -23,7 +23,7 @@ public class TweetResponse {
 
     private List<String> hashtags;
 
-    private Stats stats;
+    private StatsResponse statsResponse;
 
     private Visibility visibility;
 

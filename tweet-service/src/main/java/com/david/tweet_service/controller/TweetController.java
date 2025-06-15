@@ -1,8 +1,8 @@
 package com.david.tweet_service.controller;
 
+import com.david.common.dto.ApiResponse;
+import com.david.common.dto.tweet.TweetResponse;
 import com.david.tweet_service.dto.request.TweetRequest;
-import com.david.tweet_service.dto.response.ApiResponse;
-import com.david.tweet_service.dto.response.TweetResponse;
 import com.david.tweet_service.service.TweetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
