@@ -39,9 +39,11 @@ app:
       comment-events: comment.events.exchange
     queue:
       comment-created: comment.created.queue
+      comment-updated: comment.updated.queue
       comment-deleted: comment.deleted.queue
     routing-key:
       comment-created: comment.event.created
+      comment-updated: comment.event.updated
       comment-deleted: comment.event.deleted
 
 management:
