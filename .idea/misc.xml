@@ -22,6 +22,7 @@
         <option value="$PROJECT_DIR$/comment-dto/pom.xml" />
         <option value="$PROJECT_DIR$/common-dto/pom.xml" />
         <option value="$PROJECT_DIR$/common/pom.xml" />
+        <option value="$PROJECT_DIR$/follow-service/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
