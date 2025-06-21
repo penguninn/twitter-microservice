@@ -1,6 +1,6 @@
 package com.david.event;
 
-import com.david.dto.UserEventDto;
+import com.david.common.dto.profile.ProfileCreationMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.ConnectionFactory;
 import org.keycloak.events.Event;
@@ -47,18 +47,28 @@ public class RabbitMqEventListenerProvider implements EventListenerProvider {
                 String displayName = userModel.getFirstAttribute("name");
                 String profileImgUrl = userModel.getFirstAttribute("avatar");
 
-                UserEventDto userEventDto = new UserEventDto(displayName, email, event.getType().toString(), profileImgUrl, userId, username);
-
+                EventListener<?> userRegisteredMessage = EventListener.builder()
+                        .eventId(event.getId())
+                        .eventType(event.getType().toString())
+                        .timestamp(event.getTime())
+                        .payload(ProfileCreationMessage.builder()
+                                .userId(userId)
+                                .username(username)
+                                .email(email)
+                                .displayName(displayName)
+                                .profileImageUrl(profileImgUrl)
+                                .build())
+                        .build();
                 try {
-                    String message = objectMapper.writeValueAsString(userEventDto);
+                    String message = objectMapper.writeValueAsString(userRegisteredMessage);
                     try (var connection = factory.newConnection();
                          var channel = connection.createChannel()) {
-                        channel.exchangeDeclare(exchangeName, "direct", true);
+                        channel.exchangeDeclare(exchangeName, "topic", true);
                         channel.basicPublish(exchangeName, routingKeyUserRegistered, null, message.getBytes(StandardCharsets.UTF_8));
                         System.out.println(" [Keycloak SPI] Sent '" + routingKeyUserRegistered + "':'" + message + "'");
                     } catch (Exception e) {
-                        System.err.println(" [Keycloak SPI] CRITICAL: Error publishing message to RabbitMQ for user ID: " + userEventDto.getUserId() +
-                                ", Event Type: " + userEventDto.getEventType() + ". Error: " + e.getMessage());
+                        System.err.println(" [Keycloak SPI] CRITICAL: Error publishing message to RabbitMQ for event ID: " + userRegisteredMessage.getEventId() +
+                                ", Event Type: " + userRegisteredMessage.getEventType() + ". Error: " + e.getMessage());
                         e.printStackTrace();
                     }
                 } catch (Exception e) {

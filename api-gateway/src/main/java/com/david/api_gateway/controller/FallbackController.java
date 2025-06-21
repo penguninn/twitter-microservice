@@ -21,4 +21,9 @@ public class FallbackController {
     public String tweetFallback() {
         return "Tweet service is not available";
     }
+
+    @RequestMapping(value = "/follow-fallback", method = {RequestMethod.GET, RequestMethod.POST})
+    public String followFallback() {
+        return "Follow service is not available";
+    }
 }

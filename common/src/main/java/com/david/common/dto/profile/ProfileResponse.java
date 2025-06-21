@@ -1,4 +1,4 @@
-package com.david.profile_service.dto.response;
+package com.david.common.dto.profile;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

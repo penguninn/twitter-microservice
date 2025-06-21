@@ -1,6 +1,6 @@
 package com.david.profile_service.exception;
 
-import com.david.profile_service.dto.response.ApiResponse;
+import com.david.common.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;

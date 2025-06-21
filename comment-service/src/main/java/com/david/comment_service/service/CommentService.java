@@ -8,8 +8,10 @@ import com.david.comment_service.exception.CommentServiceException;
 import com.david.comment_service.mapper.CommentMapper;
 import com.david.comment_service.repository.CommentRepository;
 import com.david.comment_service.repository.TweetClient;
+import com.david.common.dto.ApiEventMessage;
 import com.david.common.dto.FeignApiResponse;
 import com.david.common.dto.PageResponse;
+import com.david.common.dto.comment.CommentCreationMessage;
 import com.david.common.dto.comment.CommentResponse;
 import com.david.common.dto.tweet.TweetResponse;
 import com.david.common.enums.CommentType;
@@ -38,6 +40,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -50,14 +53,8 @@ public class CommentService {
     private final TweetClient tweetClient;
     private final MongoTemplate mongoTemplate;
 
-    @Value("${app.rabbitmq.exchange.comment-events}")
-    private String commentEventExchange;
     @Value("${app.rabbitmq.routing-key.comment-created}")
     private String commentCreatedRoutingKey;
-    @Value("${app.rabbitmq.routing-key.comment-updated}")
-    private String commentUpdatedRoutingKey;
-    @Value("${app.rabbitmq.routing-key.comment-deleted}")
-    private String commentDeletedRoutingKey;
 
     public PageResponse<?> getTopLevelCommentsByTweetId(String tweetId, int page, int size, String sortBy) {
         log.info("CommentService::getCommentsByTweetId - Execution started for tweetId: {}", tweetId);
@@ -128,7 +125,7 @@ public class CommentService {
         Comment savedComment = commentRepository.save(commentCreation);
 
         log.info("TweetService::createComment - Comment saved");
-        CommentCreateEvent commentCreateEvent = CommentCreateEvent.builder()
+        CommentCreationMessage commentCreateEvent = CommentCreationMessage.builder()
                 .commentId(savedComment.getId())
                 .tweetId(tweetId)
                 .userId(jwt.getSubject())
@@ -137,7 +134,12 @@ public class CommentService {
                 .createdAt(savedComment.getCreatedAt())
                 .build();
         try {
-            rabbitTemplate.convertAndSend(commentEventExchange, commentCreatedRoutingKey, commentCreateEvent);
+            rabbitTemplate.convertAndSend(commentCreatedRoutingKey, ApiEventMessage.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("COMMENT_CREATED")
+                    .timestamp(String.valueOf(savedComment.getCreatedAt()))
+                    .payload(commentCreateEvent)
+                    .build());
             log.info("CommentService::createComment - Comment creation event sent to RabbitMQ");
         } catch (Exception e) {
             log.error("CommentService::createComment - Failed to send comment creation event", e);
@@ -161,14 +163,6 @@ public class CommentService {
         isTweetExists(existingComment.getTweetId().toString());
         existingComment.setContent(request.getContent());
         Comment updatedComment = commentRepository.save(existingComment);
-
-        log.info("CommentService::updateComment - Comment updated successfully");
-        try {
-            rabbitTemplate.convertAndSend(commentEventExchange, commentUpdatedRoutingKey, Map.of("commentId", updatedComment.getId()));
-            log.info("CommentService::updateComment - Comment update event sent to RabbitMQ");
-        } catch (Exception e) {
-            log.error("CommentService::updateComment - Failed to send comment update event", e);
-        }
         log.info("CommentService::updateComment - Execution ended for commentId: {}", commentId);
         return commentMapper.toDto(updatedComment);
     }
@@ -202,16 +196,7 @@ public class CommentService {
         idsToDelete.add(commentId);
 
         commentRepository.deleteAllById(idsToDelete);
-
-
         log.info("CommentService::deleteComment - Deleted {} comment(s)", idsToDelete.size());
-
-        try {
-            rabbitTemplate.convertAndSend(commentEventExchange, commentDeletedRoutingKey, Map.of("commentId", commentId));
-            log.info("CommentService::deleteComment - Deletion event sent to RabbitMQ");
-        } catch (Exception e) {
-            log.error("CommentService::deleteComment - Failed to send deletion event", e);
-        }
     }
 
 

@@ -1,5 +1,6 @@
 package com.david.tweet_service.service;
 
+import com.david.common.dto.ApiEventMessage;
 import com.david.common.dto.FeignApiResponse;
 import com.david.common.dto.media.MediaResponse;
 import com.david.common.dto.tweet.TweetResponse;
@@ -31,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,8 +45,6 @@ public class TweetService {
     private final TweetMapper tweetMapper;
     private final MediaMapper mediaMapper;
 
-    @Value("${app.rabbitmq.exchange.tweet-events}")
-    private String tweetEventsExchange;
     @Value("${app.rabbitmq.routing-key.tweet-created}")
     private String tweetCreatedRoutingKey;
     @Value("${app.rabbitmq.routing-key.tweet-deleted}")
@@ -155,7 +155,12 @@ public class TweetService {
                 .build();
 
         try {
-            rabbitTemplate.convertAndSend(tweetEventsExchange, tweetCreatedRoutingKey, tweetCreatedEvent);
+            rabbitTemplate.convertAndSend(tweetCreatedRoutingKey, ApiEventMessage.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("TWEET_CREATED")
+                    .timestamp(String.valueOf(System.currentTimeMillis()))
+                    .payload(tweetCreatedEvent)
+                    .build());
             log.info("TweetService::getTweetById - TweetCreatedEvent published for tweetId: {}", tweetCreatedEvent.getTweetId());
         } catch (Exception e) {
             log.error("TweetService::getTweetById - Failed to publish TweetCreatedEvent for tweetId: {}. Error: {}", tweetCreatedEvent.getTweetId(), e.getMessage());
@@ -185,7 +190,7 @@ public class TweetService {
             log.info("User {} liked tweet {}", userId, tweetId);
 
             try {
-                rabbitTemplate.convertAndSend(tweetEventsExchange, tweetLikedRoutingKey, tweetId);
+                rabbitTemplate.convertAndSend(tweetLikedRoutingKey, tweetId);
                 log.info("Published TweetLikedEvent for {}", tweetId);
             } catch (Exception e) {
                 log.error("Failed to publish liked event: {}", e.getMessage());
@@ -235,7 +240,12 @@ public class TweetService {
         tweetRepository.delete(tweet);
         log.info("TweetService::deleteTweet - Tweet deleted with id: {}", tweetId);
         try {
-            rabbitTemplate.convertAndSend(tweetEventsExchange, tweetDeletedRoutingKey, tweetId);
+            rabbitTemplate.convertAndSend(tweetDeletedRoutingKey, ApiEventMessage.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("TWEET_DELETED")
+                    .timestamp(String.valueOf(System.currentTimeMillis()))
+                    .payload(tweetId)
+                    .build());
             log.info("TweetService::deleteTweet - TweetDeletedEvent published for tweetId: {}", tweetId);
         } catch (Exception e) {
             log.error("TweetService::deleteTweet - Failed to publish TweetDeletedEvent for tweetId: {}. Error: {}", tweetId, e.getMessage());

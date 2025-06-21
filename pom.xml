@@ -29,6 +29,7 @@
         <module>notification-service</module>
         <module>comment-service</module>
         <module>common</module>
+        <module>follow-service</module>
     </modules>
 
     <dependencyManagement>

@@ -1,13 +1,14 @@
 package com.david.profile_service.service;
 
-import com.david.profile_service.dto.event.UserRegisterEventDto;
+import com.david.common.dto.FeignApiResponse;
+import com.david.common.dto.PageResponse;
+import com.david.common.dto.media.MediaResponse;
+import com.david.common.dto.profile.ProfileCreationMessage;
+import com.david.common.dto.profile.ProfileResponse;
 import com.david.profile_service.dto.request.ChangePasswordRequest;
 import com.david.profile_service.dto.request.EmailUpdateRequest;
 import com.david.profile_service.dto.request.ProfileUpdateRequest;
 import com.david.profile_service.dto.request.UsernameUpdateRequest;
-import com.david.profile_service.dto.response.FeignApiResponse;
-import com.david.profile_service.dto.response.MediaResponse;
-import com.david.profile_service.dto.response.ProfileResponse;
 import com.david.profile_service.entity.Profile;
 import com.david.profile_service.exception.ProfileNotFoundException;
 import com.david.profile_service.exception.ProfileServiceException;
@@ -50,6 +51,7 @@ public class ProfileService {
     private final MediaClient mediaClient;
     private final Keycloak keycloakAdminClient;
     private final CacheManager cacheManager;
+    private final ProfileMapper profileMapper;
 
     @Value("${app.idp.realm}")
     private String realm;
@@ -80,7 +82,7 @@ public class ProfileService {
                     return new ProfileNotFoundException("Profile not found with userId: " + userId);
                 });
         log.info("ProfileService::getProfileById - Execution ended successfully. [userId: {}]", userId);
-        return ProfileMapper.mapToDto(profile);
+        return profileMapper.toDto(profile);
     }
 
     @Cacheable(cacheNames = "cacheProfileByUsername", key = "#username")
@@ -92,11 +94,11 @@ public class ProfileService {
                     return new ProfileNotFoundException("Profile not found with username: " + username);
                 });
         log.info("ProfileService::getProfileByUsername - Execution ended successfully. [username: {}]", username);
-        return ProfileMapper.mapToDto(profile);
+        return profileMapper.toDto(profile);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public List<ProfileResponse> getAllProfile(int page, int size, String sortBy) {
+    public PageResponse<?> getAllProfile(int page, int size, String sortBy) {
         log.info("ProfileService::getAllProfile - Execution started. [page: {}, size: {}, sortBy: {}]", page, size, sortBy);
         try {
             int p = Math.max(0, page - 1);
@@ -107,10 +109,16 @@ public class ProfileService {
 
             Page<Profile> profiles = profileRepository.findAll(pageable);
             List<ProfileResponse> profileResponses = profiles.stream()
-                    .map(ProfileMapper::mapToDto)
+                    .map(profileMapper::toDto)
                     .toList();
             log.info("ProfileService::getAllProfile - Execution ended successfully. Found {} profiles.", profileResponses.size());
-            return profileResponses;
+            return PageResponse.builder()
+                    .contents(profileResponses)
+                    .page(page)
+                    .size(size)
+                    .totalPages(profiles.getTotalPages())
+                    .totalElements(profiles.getTotalElements())
+                    .build();
         } catch (IllegalArgumentException e) {
             log.error("ProfileService::getAllProfile - Invalid sort direction. [sortBy: {}]", sortBy, e);
             throw new ProfileServiceException("Invalid sort direction provided: " + sortBy, e);
@@ -122,7 +130,7 @@ public class ProfileService {
 
     @Transactional
     @CachePut(cacheNames = "cacheProfileById", key = "#result.userId")
-    public ProfileResponse register(UserRegisterEventDto request) {
+    public ProfileResponse register(ProfileCreationMessage request) {
         try {
             log.info("ProfileService::register - Execution started");
             Profile profile = Profile.builder()
@@ -130,11 +138,11 @@ public class ProfileService {
                     .username(request.getUsername())
                     .email(request.getEmail())
                     .displayName(request.getDisplayName())
-                    .profileImageUrl(request.getProfileImgUrl())
+                    .profileImageUrl(request.getProfileImageUrl())
                     .build();
             Profile savedProfile = profileRepository.save(profile);
             log.info("ProfileService::register - Execution ended successfully");
-            return ProfileMapper.mapToDto(savedProfile);
+            return profileMapper.toDto(savedProfile);
         } catch (ProfileServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -163,7 +171,7 @@ public class ProfileService {
             String oldUsername = existingProfile.getUsername();
             if (request.getUsername().equals(oldUsername)) {
                 log.info("ProfileService::updateUsername - New username is the same as current. No update needed. [userId: {}]", userId);
-                return ProfileMapper.mapToDto(existingProfile);
+                return profileMapper.toDto(existingProfile);
             }
 
             try {
@@ -191,7 +199,7 @@ public class ProfileService {
                 cacheManager.getCache("cacheProfileByUsername").evict(oldUsername);
             }
 
-            ProfileResponse updatedResponse = ProfileMapper.mapToDto(updatedProfile);
+            ProfileResponse updatedResponse = profileMapper.toDto(updatedProfile);
             log.info("ProfileService::updateUsername - Execution ended successfully. [userId: {}]", userId);
             return updatedResponse;
         } catch (ProfileServiceException | ProfileNotFoundException e) {
@@ -215,7 +223,7 @@ public class ProfileService {
                     });
             if (request.getEmail().equals(existingProfile.getEmail())) {
                 log.info("ProfileService::updateEmail - New email is the same as current. No update needed. [userId: {}]", userId);
-                return ProfileMapper.mapToDto(existingProfile);
+                return profileMapper.toDto(existingProfile);
             }
             try {
                 UserResource userResource = keycloakAdminClient.realm(realm).users().get(userId);
@@ -238,7 +246,7 @@ public class ProfileService {
             Profile updatedProfile = profileRepository.save(existingProfile);
             log.info("ProfileService::updateEmail - Email (and possibly username) updated successfully in local DB. [userId: {}]", userId);
             log.info("ProfileService::updateEmail - Execution ended successfully. [userId: {}]", userId);
-            return ProfileMapper.mapToDto(updatedProfile);
+            return profileMapper.toDto(updatedProfile);
         } catch (ProfileServiceException | ProfileNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -302,7 +310,7 @@ public class ProfileService {
             Profile updatedProfile = profileRepository.save(existingProfile);
             log.info("ProfileService::updateProfile - Profile updated successfully in local DB. [userId: {}]", userId);
             log.info("ProfileService::updateProfile - Execution ended successfully. [userId: {}]", userId);
-            return ProfileMapper.mapToDto(updatedProfile);
+            return profileMapper.toDto(updatedProfile);
         } catch (ProfileServiceException | ProfileNotFoundException e) {
             throw e;
         } catch (Exception e) {

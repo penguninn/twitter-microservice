@@ -58,6 +58,16 @@ spring:
               args:
                 name: comment-circuit-breaker
                 fallbackUri: forward:/comment-fallback
+        - id: follow-service
+          uri: lb://follow-service
+          predicates:
+            - Path=/follow-service/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: follow-circuit-breaker
+                fallbackUri: forward:/follow-fallback
 springdoc:
   swagger-ui:
     use-root-path: true
@@ -73,6 +83,8 @@ springdoc:
         url: /tweet-service/v3/api-docs
       - name: Comment Service
         url: /comment-service/v3/api-docs
+      - name: Follow Service
+        url: /follow-service/v3/api-docs
 
 resilience4j:
   timelimiter:

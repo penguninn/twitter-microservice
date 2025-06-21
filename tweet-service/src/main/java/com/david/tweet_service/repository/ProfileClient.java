@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface ProfileClient {
 
     @GetMapping(value = "/api/v1/profiles/i/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    FeignApiResponse<Boolean> getProfileById(@PathVariable("userId") String userId);
+    FeignApiResponse<Boolean> userExistsById(@PathVariable("userId") String userId);
 
 }

@@ -1,4 +1,4 @@
-package com.david.profile_service.dto.request;
+package com.david.common.dto.profile;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,11 +11,15 @@ import java.io.Serializable;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProfileCreationRequest implements Serializable {
+public class ProfileCreationMessage implements Serializable {
 
     private String userId;
 
     private String username;
 
     private String email;
+
+    private String displayName;
+
+    private String profileImageUrl;
 }

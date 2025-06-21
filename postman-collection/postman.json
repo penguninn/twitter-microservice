@@ -1,0 +1,330 @@
+{
+	"info": {
+		"name": "OpenAPI definition",
+		"description": {
+		    "content": "",
+		    "type": "text/markdown"
+		},
+		"version": "v0",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+	        {
+	            "name": "follow-controller",
+	            "item": [
+	                        {
+    "name": "/api/v1/follows/:followedId",
+                "description": "",
+                 "item": [
+                            {
+                                "name": "followUser",
+                                "request": {
+    "method": "POST",
+    "header": [
+        {
+        "key": "Accept",
+        "value": "*/*",
+        "description": "",
+        "disabled": false
+        }
+    ],
+    "body": {
+    "mode": "raw",
+    "raw": "",
+    "options": {
+    "raw": {
+    "language": "json"
+    }
+    }
+    },
+    "url": {
+    "raw": "{{baseUrl}}/api/v1/follows/:followedId",
+    "host": [
+    "{{baseUrl}}"
+    ],
+    "path": [
+        "api",
+        "v1",
+        "follows",
+        ":followedId"
+    ],
+    "variable": [
+        {
+        "key": "followedId",
+        "value": "",
+        "description": ""
+        }
+    ],
+    "query": [
+    ]
+    },
+    "description": ""
+}
+                                ,"response": [
+                            ]
+                            }
+                            ]
+                        },
+	                        {
+    "name": "/api/v1/follows/:followedId",
+                "description": "",
+                 "item": [
+                            {
+                                "name": "unfollowUser",
+                                "request": {
+    "method": "DELETE",
+    "header": [
+        {
+        "key": "Accept",
+        "value": "*/*",
+        "description": "",
+        "disabled": false
+        }
+    ],
+    "body": {
+    "mode": "raw",
+    "raw": "",
+    "options": {
+    "raw": {
+    "language": "json"
+    }
+    }
+    },
+    "url": {
+    "raw": "{{baseUrl}}/api/v1/follows/:followedId",
+    "host": [
+    "{{baseUrl}}"
+    ],
+    "path": [
+        "api",
+        "v1",
+        "follows",
+        ":followedId"
+    ],
+    "variable": [
+        {
+        "key": "followedId",
+        "value": "",
+        "description": ""
+        }
+    ],
+    "query": [
+    ]
+    },
+    "description": ""
+}
+                                ,"response": [
+                            ]
+                            }
+                            ]
+                        },
+	                        {
+    "name": "/api/v1/follows/:followedId/followers",
+                "description": "",
+                 "item": [
+                            {
+                                "name": "getFollowers",
+                                "request": {
+    "method": "GET",
+    "header": [
+        {
+        "key": "Accept",
+        "value": "*/*",
+        "description": "",
+        "disabled": false
+        }
+    ],
+    "body": {
+    "mode": "raw",
+    "raw": "",
+    "options": {
+    "raw": {
+    "language": "json"
+    }
+    }
+    },
+    "url": {
+    "raw": "{{baseUrl}}/api/v1/follows/:followedId/followers",
+    "host": [
+    "{{baseUrl}}"
+    ],
+    "path": [
+        "api",
+        "v1",
+        "follows",
+        ":followedId",
+        "followers"
+    ],
+    "variable": [
+        {
+        "key": "followedId",
+        "value": "",
+        "description": ""
+        }
+    ],
+    "query": [
+        {
+        "key": "page",
+        "value": "56",
+        "description": "",
+        "disabled": true
+        },
+        {
+        "key": "size",
+        "value": "56",
+        "description": "",
+        "disabled": true
+        },
+        {
+        "key": "sortBy",
+        "value": "sortBy_example",
+        "description": "",
+        "disabled": true
+        }
+    ]
+    },
+    "description": ""
+}
+                                ,"response": [
+                            ]
+                            }
+                            ]
+                        },
+	                        {
+    "name": "/api/v1/follows/:followerId",
+                "description": "",
+                 "item": [
+                            {
+                                "name": "isFollowing",
+                                "request": {
+    "method": "GET",
+    "header": [
+        {
+        "key": "Accept",
+        "value": "*/*",
+        "description": "",
+        "disabled": false
+        }
+    ],
+    "body": {
+    "mode": "raw",
+    "raw": "",
+    "options": {
+    "raw": {
+    "language": "json"
+    }
+    }
+    },
+    "url": {
+    "raw": "{{baseUrl}}/api/v1/follows/:followerId",
+    "host": [
+    "{{baseUrl}}"
+    ],
+    "path": [
+        "api",
+        "v1",
+        "follows",
+        ":followerId"
+    ],
+    "variable": [
+        {
+        "key": "followerId",
+        "value": "",
+        "description": ""
+        }
+    ],
+    "query": [
+    ]
+    },
+    "description": ""
+}
+                                ,"response": [
+                            ]
+                            }
+                            ]
+                        },
+	                        {
+    "name": "/api/v1/follows/:followerId/following",
+                "description": "",
+                 "item": [
+                            {
+                                "name": "getFollowing",
+                                "request": {
+    "method": "GET",
+    "header": [
+        {
+        "key": "Accept",
+        "value": "*/*",
+        "description": "",
+        "disabled": false
+        }
+    ],
+    "body": {
+    "mode": "raw",
+    "raw": "",
+    "options": {
+    "raw": {
+    "language": "json"
+    }
+    }
+    },
+    "url": {
+    "raw": "{{baseUrl}}/api/v1/follows/:followerId/following",
+    "host": [
+    "{{baseUrl}}"
+    ],
+    "path": [
+        "api",
+        "v1",
+        "follows",
+        ":followerId",
+        "following"
+    ],
+    "variable": [
+        {
+        "key": "followerId",
+        "value": "",
+        "description": ""
+        }
+    ],
+    "query": [
+        {
+        "key": "page",
+        "value": "56",
+        "description": "",
+        "disabled": true
+        },
+        {
+        "key": "size",
+        "value": "56",
+        "description": "",
+        "disabled": true
+        },
+        {
+        "key": "sortBy",
+        "value": "sortBy_example",
+        "description": "",
+        "disabled": true
+        }
+    ]
+    },
+    "description": ""
+}
+                                ,"response": [
+                            ]
+                            }
+                            ]
+                        }
+	                    ]
+	        }
+    ],
+    
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://172.18.64.1:8086",
+			"type": "string"
+        }
+	]
+}
+

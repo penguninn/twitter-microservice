@@ -1,11 +1,12 @@
 package com.david.profile_service.controller;
 
+import com.david.common.dto.ApiResponse;
+import com.david.common.dto.PageResponse;
+import com.david.common.dto.profile.ProfileResponse;
 import com.david.profile_service.dto.request.ChangePasswordRequest;
 import com.david.profile_service.dto.request.EmailUpdateRequest;
 import com.david.profile_service.dto.request.ProfileUpdateRequest;
 import com.david.profile_service.dto.request.UsernameUpdateRequest;
-import com.david.profile_service.dto.response.ApiResponse;
-import com.david.profile_service.dto.response.ProfileResponse;
 import com.david.profile_service.service.ProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +26,10 @@ public class ProfileController {
     private final ProfileService profileService;
 
     @GetMapping("/exists/{userId}")
-    public ApiResponse<?> checkProfileExists(@Valid @PathVariable(name = "userId") String userId) {
+    public ApiResponse<Boolean> checkProfileExists(@Valid @PathVariable(name = "userId") String userId) {
         log.info("ProfileController::checkProfileExists execution started");
         boolean exists = profileService.checkProfileExists(userId);
-        ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK, "Check profile existence successfully", exists);
+        ApiResponse<Boolean> response = new ApiResponse<>(HttpStatus.OK, "Check profile existence successfully", exists);
         log.info("ProfileController::checkProfileExists execution ended");
         return response;
     }
@@ -58,7 +59,7 @@ public class ProfileController {
             @RequestParam(name = "sortBy", defaultValue = "displayName,asc") String sortBy
     ) {
         log.info("ProfileController::getAllProfile execution started");
-        List<ProfileResponse> profileResponses = profileService.getAllProfile(page, size, sortBy);
+        PageResponse<?> profileResponses = profileService.getAllProfile(page, size, sortBy);
         ApiResponse<?> response = new ApiResponse<>(HttpStatus.OK, "Get all profile successfully", profileResponses);
         log.info("ProfileController::getAllProfile execution ended");
         return response;

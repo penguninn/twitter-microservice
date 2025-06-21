@@ -30,6 +30,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/media-service/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/tweet-service/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/comment-service/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/follow-service/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

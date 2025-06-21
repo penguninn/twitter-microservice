@@ -57,12 +57,11 @@ app:
       url: http://localhost:8082
   rabbitmq:
     exchange:
-      keycloak-events: keycloak.events.exchange
+      identity-events: identity.events.exchange
     queue:
-      keycloak-events: keycloak.events.queue
+      user-registered: identity.registered.queue
     routing-key:
-      user-registered: keycloak.user.registered
-      user-logged-in: keycloak.user.logged-in
+      user-registered: identity.event.registered
 
 management:
   endpoints:

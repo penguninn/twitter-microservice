@@ -4,6 +4,7 @@ import com.david.common.dto.media.MediaResponse;
 import com.david.common.enums.Visibility;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Getter
@@ -11,7 +12,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TweetResponse {
+public class TweetResponse implements Serializable {
 
     private String id;
 
