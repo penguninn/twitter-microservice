@@ -1,6 +1,5 @@
 package com.david.comment_service.service;
 
-import com.david.comment_service.dto.event.CommentCreateEvent;
 import com.david.comment_service.dto.request.CommentRequest;
 import com.david.comment_service.entity.Comment;
 import com.david.comment_service.exception.CommentNotFoundException;
@@ -11,7 +10,7 @@ import com.david.comment_service.repository.TweetClient;
 import com.david.common.dto.ApiEventMessage;
 import com.david.common.dto.FeignApiResponse;
 import com.david.common.dto.PageResponse;
-import com.david.common.dto.comment.CommentCreationMessage;
+import com.david.common.dto.comment.CommentCreatedEventPayload;
 import com.david.common.dto.comment.CommentResponse;
 import com.david.common.dto.tweet.TweetResponse;
 import com.david.common.enums.CommentType;
@@ -39,7 +38,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -125,7 +123,7 @@ public class CommentService {
         Comment savedComment = commentRepository.save(commentCreation);
 
         log.info("TweetService::createComment - Comment saved");
-        CommentCreationMessage commentCreateEvent = CommentCreationMessage.builder()
+        CommentCreatedEventPayload commentCreateEvent = CommentCreatedEventPayload.builder()
                 .commentId(savedComment.getId())
                 .tweetId(tweetId)
                 .userId(jwt.getSubject())

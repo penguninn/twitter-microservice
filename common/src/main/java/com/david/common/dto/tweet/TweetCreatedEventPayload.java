@@ -1,4 +1,4 @@
-package com.david.tweet_service.dto.event;
+package com.david.common.dto.tweet;
 
 import com.david.common.dto.media.MediaResponse;
 import com.david.common.enums.Visibility;
@@ -12,19 +12,11 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TweetCreatedEvent implements Serializable {
+public class TweetCreatedEventPayload implements Serializable {
 
     private String tweetId;
 
     private String userId;
-
-    private String content;
-
-    private List<MediaResponse> mediaList;
-
-    private List<String> hashtags;
-
-    private Visibility visibility;
 
     private long createdAt;
 }

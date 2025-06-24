@@ -3,7 +3,7 @@ package com.david.profile_service.service;
 import com.david.common.dto.FeignApiResponse;
 import com.david.common.dto.PageResponse;
 import com.david.common.dto.media.MediaResponse;
-import com.david.common.dto.profile.ProfileCreationMessage;
+import com.david.common.dto.profile.ProfileCreationEventPayload;
 import com.david.common.dto.profile.ProfileResponse;
 import com.david.profile_service.dto.request.ChangePasswordRequest;
 import com.david.profile_service.dto.request.EmailUpdateRequest;
@@ -130,7 +130,7 @@ public class ProfileService {
 
     @Transactional
     @CachePut(cacheNames = "cacheProfileById", key = "#result.userId")
-    public ProfileResponse register(ProfileCreationMessage request) {
+    public void register(ProfileCreationEventPayload request) {
         try {
             log.info("ProfileService::register - Execution started");
             Profile profile = Profile.builder()
@@ -140,9 +140,8 @@ public class ProfileService {
                     .displayName(request.getDisplayName())
                     .profileImageUrl(request.getProfileImageUrl())
                     .build();
-            Profile savedProfile = profileRepository.save(profile);
+            profileRepository.save(profile);
             log.info("ProfileService::register - Execution ended successfully");
-            return profileMapper.toDto(savedProfile);
         } catch (ProfileServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -152,7 +151,7 @@ public class ProfileService {
     }
 
     @Transactional
-    @PreAuthorize("#a0 == authentication.principal.subject or hasRole('ADMIN')")
+    @PreAuthorize("#    a0 == authentication.principal.subject or hasRole('ADMIN')")
     @Caching(
             put = {
                     @CachePut(cacheNames = "cacheProfileById", key = "#result.userId"),

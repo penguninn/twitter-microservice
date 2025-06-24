@@ -26,4 +26,9 @@ public class FallbackController {
     public String followFallback() {
         return "Follow service is not available";
     }
+
+    @RequestMapping(value = "/timeline-fallback", method = {RequestMethod.GET, RequestMethod.POST})
+    public String timelineFallback() {
+        return "Timeline service is not available";
+    }
 }

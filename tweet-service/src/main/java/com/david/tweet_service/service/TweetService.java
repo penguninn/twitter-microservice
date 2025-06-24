@@ -5,7 +5,7 @@ import com.david.common.dto.FeignApiResponse;
 import com.david.common.dto.media.MediaResponse;
 import com.david.common.dto.tweet.TweetResponse;
 import com.david.common.enums.Visibility;
-import com.david.tweet_service.dto.event.TweetCreatedEvent;
+import com.david.common.dto.tweet.TweetCreatedEventPayload;
 import com.david.tweet_service.dto.request.TweetRequest;
 import com.david.tweet_service.entity.Tweet;
 import com.david.tweet_service.exception.TweetNotFoundException;
@@ -77,6 +77,15 @@ public class TweetService {
         return tweetMapper.toDto(savedTweet);
     }
 
+    public List<TweetResponse> getTweetsByIds(List<String> tweetIds) {
+        log.info("TweetService::getTweetsByIds - Execution started for tweetIds: {}", tweetIds);
+        List<TweetResponse> tweetResponses = tweetRepository.findAllById(tweetIds).stream()
+                .map(tweetMapper::toDto)
+                .toList();
+        log.info("TweetService::getTweetsByIds - Execution ended for tweetIds: {}", tweetIds);
+        return tweetResponses;
+    }
+
     public List<TweetResponse> getMyTweets(int page, int size, String sortBy) {
         log.info("TweetService::getMyTweets - Execution started");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -142,15 +151,9 @@ public class TweetService {
         tweet.setUserId(userId);
         Tweet savedTweet = tweetRepository.save(tweet);
         log.info("TweetService::createTweet - Tweet saved with id: {}", savedTweet.getId());
-        TweetCreatedEvent tweetCreatedEvent = TweetCreatedEvent.builder()
+        TweetCreatedEventPayload tweetCreatedEventPayload = TweetCreatedEventPayload.builder()
                 .tweetId(savedTweet.getId())
                 .userId(savedTweet.getUserId())
-                .content(savedTweet.getContent())
-                .hashtags(savedTweet.getHashtags())
-                .mediaList(savedTweet.getMediaItems().stream()
-                        .map(mediaMapper::toDto)
-                        .toList())
-                .visibility(savedTweet.getVisibility())
                 .createdAt(savedTweet.getCreatedAt())
                 .build();
 
@@ -159,11 +162,11 @@ public class TweetService {
                     .eventId(UUID.randomUUID().toString())
                     .eventType("TWEET_CREATED")
                     .timestamp(String.valueOf(System.currentTimeMillis()))
-                    .payload(tweetCreatedEvent)
+                    .payload(tweetCreatedEventPayload)
                     .build());
-            log.info("TweetService::getTweetById - TweetCreatedEvent published for tweetId: {}", tweetCreatedEvent.getTweetId());
+            log.info("TweetService::getTweetById - TweetCreatedEvent published for tweetId: {}", tweetCreatedEventPayload.getTweetId());
         } catch (Exception e) {
-            log.error("TweetService::getTweetById - Failed to publish TweetCreatedEvent for tweetId: {}. Error: {}", tweetCreatedEvent.getTweetId(), e.getMessage());
+            log.error("TweetService::getTweetById - Failed to publish TweetCreatedEvent for tweetId: {}. Error: {}", tweetCreatedEventPayload.getTweetId(), e.getMessage());
             throw new TweetServiceException("Failed to publish tweet created event: " + e.getMessage());
         }
         log.info("TweetService::createTweet - Execution ended");

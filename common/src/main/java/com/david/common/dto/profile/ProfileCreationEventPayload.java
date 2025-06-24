@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProfileCreationMessage implements Serializable {
+public class ProfileCreationEventPayload implements Serializable {
 
     private String userId;
 

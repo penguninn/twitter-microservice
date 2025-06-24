@@ -30,6 +30,7 @@
         <module>comment-service</module>
         <module>common</module>
         <module>follow-service</module>
+        <module>timeline-service</module>
     </modules>
 
     <dependencyManagement>

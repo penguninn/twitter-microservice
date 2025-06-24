@@ -2,8 +2,9 @@ package com.david.follow_service.service;
 
 import com.david.common.dto.ApiEventMessage;
 import com.david.common.dto.PageResponse;
-import com.david.common.dto.follow.FollowCreationMessage;
 import com.david.common.dto.follow.FollowResponse;
+import com.david.common.dto.follow.FollowedEventPayload;
+import com.david.common.dto.follow.UnfollowedEventPayload;
 import com.david.follow_service.entity.UserFollow;
 import com.david.follow_service.exception.AlreadyFollowingException;
 import com.david.follow_service.exception.NotFollowingException;
@@ -70,16 +71,16 @@ public class FollowService {
 
         try {
             rabbitTemplate.convertAndSend(followedRoutingKey, ApiEventMessage.builder()
-                            .eventId(UUID.randomUUID().toString())
-                            .eventType("FOLLOW")
-                            .timestamp(String.valueOf(System.currentTimeMillis()))
-                            .payload(FollowCreationMessage.builder()
-                                    .id(follow.getId())
-                                    .followerId(followerId)
-                                    .followedId(followedId)
-                                    .createdAt(follow.getCreatedAt())
-                                    .build())
-                            .build()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("FOLLOWED")
+                    .timestamp(String.valueOf(System.currentTimeMillis()))
+                    .payload(FollowedEventPayload.builder()
+                            .id(follow.getId())
+                            .followerId(followerId)
+                            .followedId(followedId)
+                            .createdAt(follow.getCreatedAt())
+                            .build())
+                    .build()
             );
             log.info("FollowService::followUser - Follow event sent to RabbitMQ for followerId: {}, followedId: {}", followerId, followedId);
         } catch (Exception e) {
@@ -110,19 +111,22 @@ public class FollowService {
 
         followRepository.deleteByFollowerIdAndFollowedId(followerId, followedId);
         log.info("FollowService::unFollowUser - User with ID {} successfully unfollowed user with ID {}", followerId, followedId);
-//        try {
-//            rabbitTemplate.convertAndSend(unfollowedRoutingKey, ApiEventMessage.builder()
-//                            .eventId(UUID.randomUUID().toString())
-//                            .eventType("UNFOLLOW")
-//                            .timestamp(String.valueOf(System.currentTimeMillis()))
-//                            .payload(followMapper.toEntity(followerId, followedId))
-//                            .build()
-//            );
-//            log.info("FollowService::unFollowUser - Unfollow event sent to RabbitMQ for followerId: {}, followedId: {}", followerId, followedId);
-//        } catch (Exception e) {
-//            log.error("Failed to send unfollow event to RabbitMQ: {}", e.getMessage());
-//            throw new RuntimeException("Failed to send unfollow event", e);
-//        }
+        try {
+            rabbitTemplate.convertAndSend(unfollowedRoutingKey, ApiEventMessage.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("UNFOLLOWED")
+                    .timestamp(String.valueOf(System.currentTimeMillis()))
+                    .payload(UnfollowedEventPayload.builder()
+                            .followerId(followerId)
+                            .followedId(followedId)
+                            .build())
+                    .build()
+            );
+            log.info("FollowService::unFollowUser - Unfollow event sent to RabbitMQ for followerId: {}, followedId: {}", followerId, followedId);
+        } catch (Exception e) {
+            log.error("Failed to send unfollow event to RabbitMQ: {}", e.getMessage());
+            throw new RuntimeException("Failed to send unfollow event", e);
+        }
     }
 
     public boolean isFollowing(String followedId) {

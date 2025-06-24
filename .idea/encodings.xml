@@ -33,6 +33,8 @@
     <file url="file://$PROJECT_DIR$/registry-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/timeline-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/timeline-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/tweet-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/tweet-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/untitled/src/main/java" charset="UTF-8" />

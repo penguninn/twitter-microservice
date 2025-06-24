@@ -42,7 +42,7 @@ public class FollowController {
     @GetMapping("/{followedId}/followers")
     public ApiResponse<?> getFollowers(
             @PathVariable String followedId,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sortBy) {
         log.info("FollowController::getFollowers - Fetching followers for user with ID: {}", followedId);
@@ -54,7 +54,7 @@ public class FollowController {
     @GetMapping("/{followerId}/following")
     public ApiResponse<?> getFollowing(
             @PathVariable String followerId,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sortBy) {
         log.info("FollowController::getFollowing - Fetching following for user with ID: {}", followerId);

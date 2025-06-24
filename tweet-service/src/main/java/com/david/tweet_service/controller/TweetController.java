@@ -11,15 +11,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/api/v1/tweets")
 public class TweetController {
 
     private final TweetService tweetService;
 
-    @GetMapping("/{tweetId}")
+    @GetMapping("/api/v1/tweets/{tweetId}")
     public ApiResponse<?> getTweetById(@PathVariable("tweetId") String tweetId) {
         log.info("TweetController::getTweetById - Execution started for tweetId: {}", tweetId);
         TweetResponse tweetResponse = tweetService.getTweetById(tweetId);
@@ -27,7 +28,17 @@ public class TweetController {
         return new ApiResponse<>(HttpStatus.OK, "Fetched tweet successfully", tweetResponse);
     }
 
-    @GetMapping("/me")
+    @GetMapping("/api/v1/tweets/batch")
+    public ApiResponse<?> getTweetsByIds(
+            @RequestParam(name = "ids") List<String> ids
+    ) {
+        log.info("TweetController::getTweetsByIds - Execution started for tweetIds: {}", ids);
+        var tweetResponses = tweetService.getTweetsByIds(ids);
+        log.info("TweetController::getTweetsByIds - Execution ended");
+        return new ApiResponse<>(HttpStatus.OK, "Fetched tweets successfully", tweetResponses);
+    }
+
+    @GetMapping("/api/v1/tweets/me")
     public ApiResponse<?> getMyTweets(
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
@@ -39,7 +50,7 @@ public class TweetController {
         return new ApiResponse<>(HttpStatus.OK, "Fetched my tweets successfully", tweetResponses);
     }
 
-    @GetMapping("/users/{userId}")
+    @GetMapping("/api/v1/users/{userId}/tweets")
     public ApiResponse<?> getPublicTweets(
             @PathVariable(name = "userId") String userId,
             @RequestParam(name = "page", defaultValue = "1") int page,
@@ -52,7 +63,7 @@ public class TweetController {
         return new ApiResponse<>(HttpStatus.OK, "Fetched tweets successfully", tweetResponses);
     }
 
-    @PostMapping
+    @PostMapping("/api/v1/tweets")
     public ApiResponse<?> createTweet(
             @Valid @RequestPart("tweetData") TweetRequest request,
             @RequestPart(value = "mediaFiles", required = false) MultipartFile[] mediaFiles
@@ -63,7 +74,7 @@ public class TweetController {
         return new ApiResponse<>(HttpStatus.CREATED, "Created tweet successfully", tweetResponse);
     }
 
-    @PostMapping("/{tweetId}/likes")
+    @PostMapping("/api/v1/tweets/{tweetId}/likes")
     public ApiResponse<?> likeTweet(
             @PathVariable("tweetId") String tweetId) {
         log.info("TweetController::likeTweet - Execution started for tweetId: {}", tweetId);
@@ -72,7 +83,7 @@ public class TweetController {
         return new ApiResponse<>(HttpStatus.OK, "Like tweet successfully", tweetResponse);
     }
 
-    @DeleteMapping("/{tweetId}/likes")
+    @DeleteMapping("/api/v1/tweets/{tweetId}/likes")
     public ApiResponse<?> unlikeTweet(
             @PathVariable("tweetId") String tweetId) {
         log.info("TweetController::unlikeTweet - Execution started for tweetId: {}", tweetId);
@@ -81,7 +92,7 @@ public class TweetController {
         return new ApiResponse<>(HttpStatus.OK, "Unlike tweet successfully", tweetResponse);
     }
 
-    @DeleteMapping("/{tweetId}")
+    @DeleteMapping("/api/v1/tweets/{tweetId}")
     public ApiResponse<?> deleteTweet(
             @PathVariable("tweetId") String tweetId) {
         log.info("TweetController::deleteTweet - Execution started for tweetId: {}", tweetId);

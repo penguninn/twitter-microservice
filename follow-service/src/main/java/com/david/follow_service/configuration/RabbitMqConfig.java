@@ -16,21 +16,22 @@ public class RabbitMqConfig {
     private String followEventsExchange;
 
     @Bean
-    public TopicExchange tweetEventsExchange() {
+    public TopicExchange tweetEventExchange() {
         return ExchangeBuilder.topicExchange(followEventsExchange)
                 .durable(true)
                 .build();
     }
 
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, TopicExchange commentEventsExchange) {
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, TopicExchange followEventsExchange) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setExchange(commentEventsExchange.getName());
+        template.setExchange(followEventsExchange.getName());
+        template.setMessageConverter(messageConverter());
         return template;
     }
 
-//    @Bean
-//    MessageConverter jsonMessageConverter() {
-//        return new Jackson2JsonMessageConverter();
-//    }
+    @Bean
+    public Jackson2JsonMessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
 }

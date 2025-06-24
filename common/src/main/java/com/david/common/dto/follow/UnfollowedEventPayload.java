@@ -11,13 +11,9 @@ import java.io.Serializable;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class FollowCreationMessage implements Serializable {
-
-    private String id;
+public class UnfollowedEventPayload implements Serializable {
 
     private String followerId;
 
     private String followedId;
-
-    private Long createdAt;
 }

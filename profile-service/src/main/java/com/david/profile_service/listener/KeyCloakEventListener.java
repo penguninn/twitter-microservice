@@ -1,7 +1,7 @@
 package com.david.profile_service.listener;
 
 import com.david.common.dto.ApiEventMessage;
-import com.david.common.dto.profile.ProfileCreationMessage;
+import com.david.common.dto.profile.ProfileCreationEventPayload;
 import com.david.profile_service.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,16 +17,16 @@ public class KeyCloakEventListener {
     private final ProfileService profileService;
 
     @RabbitListener(queues = "${app.rabbitmq.queue.user-registered}")
-    public void handleUserRegisteredEvent(@Payload ApiEventMessage<ProfileCreationMessage> message) {
-        log.info("Received user registered event: {}", message);
+    public void handleUserRegisteredEvent(@Payload ApiEventMessage<ProfileCreationEventPayload> payload) {
+        log.info("Received user registered event: {}", payload.getEventId());
         try {
-            if (message != null && "REGISTER".equals(message.getEventType())) {
+            if ("REGISTER".equals(payload.getEventType())) {
                 log.info("Processing user registration for userId: {}, username: {}, email: {}",
-                        message.getPayload().getUserId(),
-                        message.getPayload().getUsername(),
-                        message.getPayload().getEmail()
+                        payload.getPayload().getUserId(),
+                        payload.getPayload().getUsername(),
+                        payload.getPayload().getEmail()
                 );
-                profileService.register(message.getPayload());
+                profileService.register(payload.getPayload());
             }
         } catch (Exception e) {
             log.error("Error processing user registered event: {}", e.getMessage(), e);

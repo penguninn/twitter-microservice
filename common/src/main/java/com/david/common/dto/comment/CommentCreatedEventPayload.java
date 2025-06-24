@@ -9,7 +9,7 @@ import java.io.Serializable;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CommentCreationMessage implements Serializable {
+public class CommentCreatedEventPayload implements Serializable {
 
     private String commentId;
 
