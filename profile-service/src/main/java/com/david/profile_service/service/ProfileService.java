@@ -3,7 +3,7 @@ package com.david.profile_service.service;
 import com.david.common.dto.FeignApiResponse;
 import com.david.common.dto.PageResponse;
 import com.david.common.dto.media.MediaResponse;
-import com.david.common.dto.profile.ProfileCreationEventPayload;
+import com.david.common.dto.profile.ProfileCreatedEventPayload;
 import com.david.common.dto.profile.ProfileResponse;
 import com.david.profile_service.dto.request.ChangePasswordRequest;
 import com.david.profile_service.dto.request.EmailUpdateRequest;
@@ -106,7 +106,6 @@ public class ProfileService {
             Sort.Direction direction = sortParams.length > 1 ? Sort.Direction.fromString(sortParams[1]) : Sort.Direction.ASC;
             Sort sortOrder = Sort.by(direction, sortParams[0]);
             Pageable pageable = PageRequest.of(p, size, sortOrder);
-
             Page<Profile> profiles = profileRepository.findAll(pageable);
             List<ProfileResponse> profileResponses = profiles.stream()
                     .map(profileMapper::toDto)
@@ -130,7 +129,7 @@ public class ProfileService {
 
     @Transactional
     @CachePut(cacheNames = "cacheProfileById", key = "#result.userId")
-    public void register(ProfileCreationEventPayload request) {
+    public Profile register(ProfileCreatedEventPayload request) {
         try {
             log.info("ProfileService::register - Execution started");
             Profile profile = Profile.builder()
@@ -142,6 +141,7 @@ public class ProfileService {
                     .build();
             profileRepository.save(profile);
             log.info("ProfileService::register - Execution ended successfully");
+            return profile;
         } catch (ProfileServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -149,6 +149,7 @@ public class ProfileService {
             throw new ProfileServiceException("Failed to register account: " + e.getMessage(), e);
         }
     }
+
 
     @Transactional
     @PreAuthorize("#    a0 == authentication.principal.subject or hasRole('ADMIN')")

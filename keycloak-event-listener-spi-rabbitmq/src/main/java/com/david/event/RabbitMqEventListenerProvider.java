@@ -1,6 +1,6 @@
 package com.david.event;
 
-import com.david.common.dto.profile.ProfileCreationEventPayload;
+import com.david.common.dto.profile.ProfileCreatedEventPayload;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.ConnectionFactory;
 import org.keycloak.events.Event;
@@ -51,7 +51,7 @@ public class RabbitMqEventListenerProvider implements EventListenerProvider {
                         .eventId(event.getId())
                         .eventType(event.getType().toString())
                         .timestamp(event.getTime())
-                        .payload(ProfileCreationEventPayload.builder()
+                        .payload(ProfileCreatedEventPayload.builder()
                                 .userId(userId)
                                 .username(username)
                                 .email(email)

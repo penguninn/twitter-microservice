@@ -45,7 +45,6 @@ app:
     routing-key:
       tweet-created: tweet.event.created
       tweet-liked: tweet.event.liked
-      tweet-deleted: tweet.event.deleted
 
 management:
   endpoints:

@@ -54,6 +54,13 @@ public class CommentService {
     @Value("${app.rabbitmq.routing-key.comment-created}")
     private String commentCreatedRoutingKey;
 
+    public CommentResponse getCommentById(String commentId) {
+        log.info("CommentService::getCommentById - Execution started for commentId: {}", commentId);
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("Comment not found: " + commentId));
+        return commentMapper.toDto(comment);
+    }
+
     public PageResponse<?> getTopLevelCommentsByTweetId(String tweetId, int page, int size, String sortBy) {
         log.info("CommentService::getCommentsByTweetId - Execution started for tweetId: {}", tweetId);
         int pageNumber = Math.max(0, page - 1);
@@ -125,9 +132,8 @@ public class CommentService {
         log.info("TweetService::createComment - Comment saved");
         CommentCreatedEventPayload commentCreateEvent = CommentCreatedEventPayload.builder()
                 .commentId(savedComment.getId())
-                .tweetId(tweetId)
+                .tweetId(savedComment.getTweetId())
                 .userId(jwt.getSubject())
-                .content(savedComment.getContent())
                 .parentId(parentId)
                 .createdAt(savedComment.getCreatedAt())
                 .build();

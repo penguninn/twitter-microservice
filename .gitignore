@@ -36,3 +36,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+notification-service/src/main/resources/firebase/firebase-admin-sdk.json

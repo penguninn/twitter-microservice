@@ -18,6 +18,16 @@ public class CommentController {
 
     private  final CommentService commentService;
 
+    @GetMapping("/comments/{commentId}")
+    public ApiResponse<?> getCommentById(
+            @PathVariable("commentId") String commentId
+    ) {
+        log.info("CommentService::getCommentById - Execution started for commentId: {}", commentId);
+        CommentResponse commentResponse = commentService.getCommentById(commentId);
+        log.info("CommentService::getCommentById - Execution ended for commentId: {}", commentId);
+        return new ApiResponse<>(HttpStatus.OK, "Comment fetched successfully", commentResponse);
+    }
+
     @GetMapping("/tweets/{tweetId}/comments")
     public ApiResponse<?> getCommentsByTweetId(
             @PathVariable("tweetId") String tweetId,

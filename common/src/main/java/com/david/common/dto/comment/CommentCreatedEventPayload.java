@@ -17,8 +17,6 @@ public class CommentCreatedEventPayload implements Serializable {
 
     private String userId;
 
-    private String content;
-
     private String parentId;
 
     private Long createdAt;

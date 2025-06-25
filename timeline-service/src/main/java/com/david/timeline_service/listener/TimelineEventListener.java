@@ -19,50 +19,53 @@ public class TimelineEventListener {
 
 
     @RabbitListener(queues = "${app.rabbitmq.queue.followed}")
-    public void handleFollowedEvent(@Payload ApiEventMessage<FollowedEventPayload> payload) {
-        log.info("Received followed event: {}", payload.getEventId());
+    public void handleFollowedEvent(@Payload ApiEventMessage<FollowedEventPayload> message) {
+        log.info("Received followed event: {}", message.getEventId());
         try {
-            if ("FOLLOWED".equals(payload.getEventType())) {
+            if ("FOLLOWED".equals(message.getEventType())) {
                 log.info("Processing followed event for followerId: {}, followedId: {}",
-                        payload.getPayload().getFollowerId(),
-                        payload.getPayload().getFollowedId()
+                        message.getPayload().getFollowerId(),
+                        message.getPayload().getFollowedId()
                 );
-                timelineService.handleFollowed(payload.getPayload());
+                timelineService.handleFollowed(message.getPayload());
             }
         } catch (Exception e) {
             log.error("Error processing followed event: {}", e.getMessage(), e);
         }
+        log.info("Followed event processed successfully: {}", message.getEventId());
     }
 
     @RabbitListener(queues = "${app.rabbitmq.queue.unfollowed}")
-    public void handleUnfollowedEvent(@Payload ApiEventMessage<FollowedEventPayload> payload) {
-        log.info("Received unfollowed event: {}", payload.getEventId());
+    public void handleUnfollowedEvent(@Payload ApiEventMessage<FollowedEventPayload> message) {
+        log.info("Received unfollowed event: {}", message.getEventId());
         try {
-            if ("UNFOLLOWED".equals(payload.getEventType())) {
+            if ("UNFOLLOWED".equals(message.getEventType())) {
                 log.info("Processing unfollowed event for followerId: {}, followedId: {}",
-                        payload.getPayload().getFollowerId(),
-                        payload.getPayload().getFollowedId()
+                        message.getPayload().getFollowerId(),
+                        message.getPayload().getFollowedId()
                 );
-                timelineService.handleUnfollowed(payload.getPayload());
+                timelineService.handleUnfollowed(message.getPayload());
             }
         } catch (Exception e) {
             log.error("Error processing unfollowed event: {}", e.getMessage(), e);
         }
+        log.info("Unfollowed event processed successfully: {}", message.getEventId());
     }
 
     @RabbitListener(queues = "${app.rabbitmq.queue.tweet-created}")
-    public void handleNewTweetEvent(@Payload ApiEventMessage<TweetCreatedEventPayload> payload) {
-        log.info("Received new tweet event: {}", payload.getEventId());
+    public void handleNewTweetEvent(@Payload ApiEventMessage<TweetCreatedEventPayload> message) {
+        log.info("Received new tweet event: {}", message.getEventId());
         try {
-            if ("TWEET_CREATED".equals(payload.getEventType())) {
+            if ("TWEET_CREATED".equals(message.getEventType())) {
                 log.info("Processing new tweet event for userId: {}, tweetId: {}",
-                        payload.getPayload().getUserId(),
-                        payload.getPayload().getTweetId()
+                        message.getPayload().getUserId(),
+                        message.getPayload().getTweetId()
                 );
-                timelineService.handleNewTweet(payload.getPayload());
+                timelineService.handleNewTweet(message.getPayload());
             }
         } catch (Exception e) {
             log.error("Error processing new tweet event: {}", e.getMessage(), e);
         }
+        log.info("New tweet event processed successfully: {}", message.getEventId());
     }
 }
