@@ -12,7 +12,6 @@ services:
       KC_DB_URL: jdbc:mysql://mysql:3306/keycloak
       KC_DB_USERNAME: keycloak_user
       KC_DB_PASSWORD: keycloak_user
-      KC_HOSTNAME: localhost
       KC_HTTP_ENABLED: true
       KC_HEALTH_ENABLED: true
       KC_METRICS_ENABLED: true
@@ -102,6 +101,109 @@ services:
       retries: 5
       start_period: 20s
 
+  elasticsearch-setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.2
+    container_name: elasticsearch-setup
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+    user: "0"
+    command: >
+      bash -c '
+        if [ ! -f config/certs/ca.zip ]; then
+          echo "Creating CA";
+          bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
+          unzip config/certs/ca.zip -d config/certs;
+        fi;
+        if [ ! -f config/certs/certs.zip ]; then
+          echo "Creating certs";
+          echo -ne \
+          "instances:\n"\
+          "  - name: es01\n"\
+          "    dns:\n"\
+          "      - es01\n"\
+          "      - localhost\n"\
+          "    ip:\n"\
+          "      - 127.0.0.1\n"\
+          > config/certs/instances.yml;
+          bin/elasticsearch-certutil cert --silent --pem \
+            --in config/certs/instances.yml \
+            --out config/certs/certs.zip \
+            --ca-cert config/certs/ca/ca.crt \
+            --ca-key config/certs/ca/ca.key;
+          unzip config/certs/certs.zip -d config/certs;
+        fi;
+        echo "Setting permissions";
+        chown -R root:root config/certs;
+        find config/certs -type d -exec chmod 750 {} \;;
+        find config/certs -type f -exec chmod 640 {} \;;
+      '
+    healthcheck:
+      test: [ "CMD-SHELL", "[ -f config/certs/es01/es01.crt ]" ]
+      interval: 1s
+      timeout: 5s
+      retries: 120
+
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.2
+    container_name: es01
+    ports:
+      - "9200:9200"
+    environment:
+      - node.name=es01
+      - cluster.name=dev-cluster
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=admin
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=certs/es01/es01.key
+      - xpack.security.http.ssl.certificate=certs/es01/es01.crt
+      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.license.self_generated.type=basic
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 2g
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'"
+      ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  kibana:
+    depends_on:
+      es01:
+        condition: service_healthy
+    image: docker.elastic.co/kibana/kibana:9.0.2
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - SERVERNAME=kibana
+      - ELASTICSEARCH_HOSTS=https://es01:9200
+      - ELASTICSEARCH_SERVICEACCOUNTTOKEN=AAEAAWVsYXN0aWMva2liYW5hL3Rva2VuXzVpbUx4cGNCN3hKQ2pIdXRxajN4OnlBZUw5UzI3UWoyZW55WGpiR3l5WkE
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=certificate
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+    volumes:
+      - certs:/usr/share/kibana/config/certs
+      - kibana-data:/usr/share/kibana/data
+    mem_limit: 2g
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"
+      ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
     container_name: azurite
@@ -139,6 +241,9 @@ volumes:
   azurite-data:
   redis-data:
   mongo-data:
+  certs:
+  es-data:
+  kibana-data:
 
 #$env:AZURE_STORAGE_CONNECTION_STRING = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
 #az storage container set-permission --name twitter --public-access blob --connection-string "$env:AZURE_STORAGE_CONNECTION_STRING"

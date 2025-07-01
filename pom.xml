@@ -31,6 +31,7 @@
         <module>common</module>
         <module>follow-service</module>
         <module>timeline-service</module>
+        <module>search-service</module>
     </modules>
 
     <dependencyManagement>
