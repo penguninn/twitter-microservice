@@ -6,7 +6,7 @@
         <groupId>com.david</groupId>
         <artifactId>twitter-microservice</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
 
     <artifactId>tweet-service</artifactId>

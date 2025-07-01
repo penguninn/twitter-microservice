@@ -27,6 +27,11 @@ public class GlobalHandleException {
         return new ApiResponse<>(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(EmailServiceException.class)
+    public ApiResponse<?> handleEmailServiceException(EmailServiceException ex) {
+        return new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR, "Email service error: " + ex.getMessage());
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ApiResponse<?> handleAccessDeniedException(AccessDeniedException ex) {
         return new ApiResponse<>(HttpStatus.FORBIDDEN, "Access denied: " + ex.getMessage());

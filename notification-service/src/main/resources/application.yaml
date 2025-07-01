@@ -21,6 +21,9 @@ spring:
     listener:
       simple:
         default-requeue-rejected: false
+  sendgrid:
+    api-key: ${SENDGRID_API_KEY:SG.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX}
+    from-email: ${SENDGRID_FROM_EMAIL:noreply@penguninn.com}
 
 eureka:
   client:
@@ -57,6 +60,7 @@ app:
       comment-created: comment.event.created
   firebase:
     config-file: firebase/firebase-admin-sdk.json
+
 
 management:
   endpoints:
