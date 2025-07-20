@@ -2,18 +2,18 @@ package com.david.common.dto.profile;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-@Getter
+@Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class ProfileResponse implements Serializable {
+@AllArgsConstructor
+public class ProfileUpdatedEventPayload implements Serializable {
 
     private String userId;
 
@@ -35,7 +35,8 @@ public class ProfileResponse implements Serializable {
 
     private String bannerImageUrl;
 
+    private LocalDate joinDate;
+
     private LocalDate dateOfBirth;
 
-    private LocalDate joinDate;
 }

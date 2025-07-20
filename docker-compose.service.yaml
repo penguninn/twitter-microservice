@@ -155,23 +155,26 @@ services:
       - ELASTIC_PASSWORD=admin
       - bootstrap.memory_lock=true
       - xpack.security.enabled=true
-      - xpack.security.http.ssl.enabled=true
-      - xpack.security.http.ssl.key=certs/es01/es01.key
-      - xpack.security.http.ssl.certificate=certs/es01/es01.crt
-      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.http.ssl.enabled=false
+#      - xpack.security.http.ssl.key=certs/es01/es01.key
+#      - xpack.security.http.ssl.certificate=certs/es01/es01.crt
+#      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.license.self_generated.type=basic
     ulimits:
       memlock:
         soft: -1
         hard: -1
-    mem_limit: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 2g
     volumes:
-      - certs:/usr/share/elasticsearch/config/certs
+#      - certs:/usr/share/elasticsearch/config/certs
       - es-data:/usr/share/elasticsearch/data
     healthcheck:
       test: [
         "CMD-SHELL",
-        "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'"
+        "curl -s -u elastic:admin http://localhost:9200 | grep -q '\"cluster_name\"'"
       ]
       interval: 10s
       timeout: 10s
@@ -186,15 +189,21 @@ services:
     ports:
       - "5601:5601"
     environment:
-      - SERVERNAME=kibana
-      - ELASTICSEARCH_HOSTS=https://es01:9200
-      - ELASTICSEARCH_SERVICEACCOUNTTOKEN=AAEAAWVsYXN0aWMva2liYW5hL3Rva2VuXzVpbUx4cGNCN3hKQ2pIdXRxajN4OnlBZUw5UzI3UWoyZW55WGpiR3l5WkE
-      - ELASTICSEARCH_SSL_VERIFICATIONMODE=certificate
-      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      SERVERNAME: kibana
+      ELASTICSEARCH_HOSTS: http://es01:9200
+      ELASTICSEARCH_SERVICEACCOUNTTOKEN: AAEAAWVsYXN0aWMva2liYW5hL3Rva2VuXzVpbUx4cGNCN3hKQ2pIdXRxajN4OnlBZUw5UzI3UWoyZW55WGpiR3l5WkE
+      ELASTICSEARCH_SSL_VERIFICATIONMODE: none
+#      ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: config/certs/ca/ca.crt
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: a883b2798cc00e3379eee12153b9d9d0a883b2798cc00e3379eee12153b9d9d0
+      XPACK_REPORTING_ENCRYPTIONKEY: 0d764560b32e2508ccc97dc38662cf170d764560b32e2508ccc97dc38662cf17
+      XPACK_SECURITY_ENCRYPTIONKEY: a10e8caca04e91b61b04c8eeef92946ea10e8caca04e91b61b04c8eeef92946e
     volumes:
-      - certs:/usr/share/kibana/config/certs
+#      - certs:/usr/share/kibana/config/certs
       - kibana-data:/usr/share/kibana/data
-    mem_limit: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 2g
     healthcheck:
       test: [
         "CMD-SHELL",

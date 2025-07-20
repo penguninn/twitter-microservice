@@ -1,84 +1,11 @@
-server:
-  port: 8081
-
 spring:
   application:
     name: profile-service
-  data:
-    redis:
-      host: localhost
-      port: 6379
-  datasource:
-    url: jdbc:mysql://localhost:3306/profile_service
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: profile_service_user
-    password: profile_service_user
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-  servlet:
-    multipart:
-      max-request-size: 20MB
-      max-file-size: 10MB
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:9000/realms/twitter
-  cache:
-    type: redis
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin
-    listener:
-      simple:
-        default-requeue-rejected: false
-
-eureka:
-  client:
-    service-url:
-      default-zone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
-
-app:
-  idp:
-    url: http://localhost:9000
-    realm: twitter
-    client-id: twitter-client
-    client-secret: E3CNpb5g01PrhtbRLbe2cxqxoAAF3UYo
-  services:
-    media-service:
-      url: http://localhost:8082
-  rabbitmq:
-    exchange:
-      identity-events: identity.events.exchange
-    queue:
-      user-registered: identity.registered.queue
-    routing-key:
-      user-registered: identity.event.registered
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: ["health", "routes", "metrics", "info"]
-  info:
-    env:
-      enabled: true
-info:
-  app:
-    name: profile-service
-#
-#logging:
-#  level:
-#    org.springframework.web: debug
-#    org.springframework.security: debug
-#    org.springframework.security.web: debug
-#    org.springframework.web.cors: debug
-#    org.springframework.web.filter.CorsFilter: debug
+  profiles:
+    active: dev
+  config:
+    import: configserver:http://localhost:8888
+  cloud:
+    config:
+      uri: http://localhost:8888
+      name: profile-service

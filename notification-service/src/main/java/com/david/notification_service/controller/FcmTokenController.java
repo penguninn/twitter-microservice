@@ -6,6 +6,8 @@ import com.david.notification_service.service.FcmTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,7 +19,8 @@ public class FcmTokenController {
 
     private final FcmTokenService fcmTokenService;
 
-    public ApiResponse<?> saveFcmToken(FcmTokenRequest fcmToken) {
+    @PostMapping
+    public ApiResponse<?> saveFcmToken(@RequestBody FcmTokenRequest fcmToken) {
         log.info("FcmTokenService::saveFcmToken - Execution started");
         fcmTokenService.saveFcmToken(fcmToken);
         log.info("FcmTokenService::saveFcmToken - Execution completed");

@@ -32,6 +32,8 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/comment-service/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/follow-service/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/timeline-service/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/notification-service/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/search-service/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
@@ -50,7 +52,6 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
-
     }
 
 }

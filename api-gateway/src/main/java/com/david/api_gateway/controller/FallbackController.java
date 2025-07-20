@@ -31,4 +31,19 @@ public class FallbackController {
     public String timelineFallback() {
         return "Timeline service is not available";
     }
+
+    @RequestMapping(value = "/comment-fallback", method = {RequestMethod.GET, RequestMethod.POST})
+    public String commentFallback() {
+        return "Comment service is not available";
+    }
+
+    @RequestMapping(value = "/notification-fallback", method = {RequestMethod.GET, RequestMethod.POST})
+    public String notificationFallback() {
+        return "Notification service is not available";
+    }
+
+    @RequestMapping(value = "/search-fallback", method = {RequestMethod.GET, RequestMethod.POST})
+    public String searchFallback() {
+        return "Search service is not available";
+    }
 }

@@ -55,6 +55,6 @@ public class Profile {
 
     @CreatedDate
     @Column(updatable = false)
-    private LocalDateTime joinDate;
+    private LocalDate joinDate;
 
 }

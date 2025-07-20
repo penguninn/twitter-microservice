@@ -1,19 +1,13 @@
-package com.david.common.dto.profile;
+package com.david.search_service.dto.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
+import lombok.Data;
 
-import java.io.Serializable;
 import java.time.LocalDate;
 
-@Getter
+@Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class ProfileResponse implements Serializable {
+public class UserSearchResponseDTO {
 
     private String userId;
 

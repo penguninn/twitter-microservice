@@ -59,7 +59,7 @@ public class TimelineEventListener {
             if ("TWEET_CREATED".equals(message.getEventType())) {
                 log.info("Processing new tweet event for userId: {}, tweetId: {}",
                         message.getPayload().getUserId(),
-                        message.getPayload().getTweetId()
+                        message.getPayload().getId()
                 );
                 timelineService.handleNewTweet(message.getPayload());
             }

@@ -1,51 +1,11 @@
-server:
-  port: 8082
-
 spring:
   application:
     name: media-service
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 15MB
+  profiles:
+    active: dev
+  config:
+    import: configserver:http://localhost:8888
   cloud:
-    azure:
-      storage:
-        blob:
-          connection-string: "DefaultEndpointsProtocol=http;
-            AccountName=devstoreaccount1;
-            AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;
-            BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;
-            QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;
-            TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"
-          container-name: twitter
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:9000/realms/twitter
-
-#azure:
-#  storage:
-#    container:
-#      raw: rawmedia
-#      processed=processed: media
-
-eureka:
-  client:
-    service-url:
-      default-zone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: ["health", "routes", "gateway", "metrics", "info"]
-  info:
-    env:
-      enabled: true
-info:
-  app:
-    name: media-service
+    config:
+      uri: http://localhost:8888
+      name: media-service

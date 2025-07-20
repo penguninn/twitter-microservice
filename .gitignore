@@ -37,4 +37,8 @@ build/
 ### Mac OS ###
 .DS_Store
 
+### Logs ###
 notification-service/src/main/resources/firebase/firebase-admin-sdk.json
+
+### env ###
+.env

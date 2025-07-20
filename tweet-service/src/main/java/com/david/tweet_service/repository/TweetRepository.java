@@ -20,6 +20,8 @@ public interface TweetRepository extends MongoRepository<Tweet, String> {
 
     Page<Tweet> findAllByUserIdAndVisibility(String userId, Visibility visibility, Pageable pageable);
 
+    long countByUserId(String userId);
+
     Page<Tweet> findAllByContentContaining(String keyword, Pageable pageable);
 
     Page<Tweet> findAllByHashtagsContaining(String hashtag, Pageable pageable);

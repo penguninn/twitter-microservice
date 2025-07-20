@@ -4,19 +4,15 @@ server:
 spring:
   application:
     name: config-service
-  profiles:
-    active: native
   cloud:
     config:
       server:
-        native:
-          search-locations: classpath:/config
-#        git:
-#          uri:
-#          clone-on-start: true
-#          default-label: main
-#          username:
-#          password:
+        git:
+          uri: https://github.com/penguninn/social-app-config.git
+          clone-on-start: true
+          default-label: main
+          username: penguninn
+          password: ${GITHUB_TOKEN}
 
 eureka:
   client:

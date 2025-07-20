@@ -1,21 +1,22 @@
-package com.david.common.dto.tweet;
+package com.david.search_service.document;
 
 import com.david.common.dto.media.MediaResponse;
+import com.david.common.dto.tweet.StatsResponse;
 import com.david.common.enums.Visibility;
-import lombok.*;
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
 
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class TweetCreatedEventPayload implements Serializable {
+@Data
+@Document(indexName = "tweets")
+public class TweetDocument {
 
+    @Id
     private String id;
+
+    private String tweetId;
 
     private String userId;
 
@@ -34,4 +35,5 @@ public class TweetCreatedEventPayload implements Serializable {
     private long createdAt;
 
     private long updatedAt;
+
 }

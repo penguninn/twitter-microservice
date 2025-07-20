@@ -3,6 +3,7 @@ package com.david.tweet_service.service;
 import com.david.common.dto.ApiEventMessage;
 import com.david.common.dto.FeignApiResponse;
 import com.david.common.dto.media.MediaResponse;
+import com.david.common.dto.tweet.StatsResponse;
 import com.david.common.dto.tweet.TweetCreatedEventPayload;
 import com.david.common.dto.tweet.TweetLikedEventPayload;
 import com.david.common.dto.tweet.TweetResponse;
@@ -50,6 +51,8 @@ public class TweetService {
     private String tweetCreatedRoutingKey;
     @Value("${app.rabbitmq.routing-key.tweet-liked}")
     private String tweetLikedRoutingKey;
+    @Value("${app.rabbitmq.routing-key.tweet-deleted}")
+    private String tweetDeletedRoutingKey;
 
 
     //    @Cacheable(value = "cacheTweet", key = "#tweetId")
@@ -93,6 +96,10 @@ public class TweetService {
             throw new AuthenticationCredentialsNotFoundException("Unauthorized access");
         }
         String userId = jwt.getSubject();
+        System.out.println(userId);
+        long totalTweets = tweetRepository.countByUserId(userId);
+        log.info("Total tweets for user {}: {}", userId, totalTweets);
+
         int p = Math.max(0, page - 1);
         String[] sortParams = sortBy.split(",");
         Sort.Direction direction = sortParams.length > 1 ? Sort.Direction.fromString(sortParams[1]) : Sort.Direction.ASC;
@@ -151,9 +158,20 @@ public class TweetService {
         Tweet savedTweet = tweetRepository.save(tweet);
         log.info("TweetService::createTweet - Tweet saved with id: {}", savedTweet.getId());
         TweetCreatedEventPayload tweetCreatedEventPayload = TweetCreatedEventPayload.builder()
-                .tweetId(savedTweet.getId())
+                .id(savedTweet.getId())
                 .userId(savedTweet.getUserId())
+                .content(savedTweet.getContent())
+                .mediaItems(savedTweet.getMediaItems().stream()
+                        .map(mediaMapper::toDto)
+                        .toList())
+                .hashtags(savedTweet.getHashtags())
+                .statsResponse(StatsResponse.builder()
+                        .likesCount(savedTweet.getStats().getLikesCount())
+                        .build())
+                .visibility(savedTweet.getVisibility())
+                .likedBy(savedTweet.getLikedBy())
                 .createdAt(savedTweet.getCreatedAt())
+                .updatedAt(savedTweet.getUpdatedAt())
                 .build();
 
         try {
@@ -163,9 +181,9 @@ public class TweetService {
                     .timestamp(String.valueOf(System.currentTimeMillis()))
                     .payload(tweetCreatedEventPayload)
                     .build());
-            log.info("TweetService::getTweetById - TweetCreatedEvent published for tweetId: {}", tweetCreatedEventPayload.getTweetId());
+            log.info("TweetService::getTweetById - TweetCreatedEvent published for tweetId: {}", tweetCreatedEventPayload.getId());
         } catch (Exception e) {
-            log.error("TweetService::getTweetById - Failed to publish TweetCreatedEvent for tweetId: {}. Error: {}", tweetCreatedEventPayload.getTweetId(), e.getMessage());
+            log.error("TweetService::getTweetById - Failed to publish TweetCreatedEvent for tweetId: {}. Error: {}", tweetCreatedEventPayload.getId(), e.getMessage());
             throw new TweetServiceException("Failed to publish tweet created event: " + e.getMessage());
         }
         log.info("TweetService::createTweet - Execution ended");
@@ -250,18 +268,18 @@ public class TweetService {
         }
         tweetRepository.delete(tweet);
         log.info("TweetService::deleteTweet - Tweet deleted with id: {}", tweetId);
-//        try {
-//            rabbitTemplate.convertAndSend(tweetDeletedRoutingKey, ApiEventMessage.builder()
-//                    .eventId(UUID.randomUUID().toString())
-//                    .eventType("TWEET_DELETED")
-//                    .timestamp(String.valueOf(System.currentTimeMillis()))
-//                    .payload(tweetId)
-//                    .build());
-//            log.info("TweetService::deleteTweet - TweetDeletedEvent published for tweetId: {}", tweetId);
-//        } catch (Exception e) {
-//            log.error("TweetService::deleteTweet - Failed to publish TweetDeletedEvent for tweetId: {}. Error: {}", tweetId, e.getMessage());
-//            throw new TweetServiceException("Failed to publish tweet deleted event: " + e.getMessage());
-//        }
+        try {
+            rabbitTemplate.convertAndSend(tweetDeletedRoutingKey, ApiEventMessage.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("TWEET_DELETED")
+                    .timestamp(String.valueOf(System.currentTimeMillis()))
+                    .payload(tweetId)
+                    .build());
+            log.info("TweetService::deleteTweet - TweetDeletedEvent published for tweetId: {}", tweetId);
+        } catch (Exception e) {
+            log.error("TweetService::deleteTweet - Failed to publish TweetDeletedEvent for tweetId: {}. Error: {}", tweetId, e.getMessage());
+            throw new TweetServiceException("Failed to publish tweet deleted event: " + e.getMessage());
+        }
         log.info("TweetService::deleteTweet - Execution ended");
     }
 }

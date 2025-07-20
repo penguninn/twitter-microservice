@@ -1,6 +1,8 @@
 package com.david.profile_service.configuration;
 
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,23 +22,30 @@ public class RabbitMqConfig {
     private String userRegisteredRoutingKey;
 
     @Bean
-    TopicExchange keycloakEventsExchange() {
+    TopicExchange profileEventsExchange() {
         return ExchangeBuilder.topicExchange(identityEventsExchange)
                 .durable(true)
                 .build();
     }
 
     @Bean
-    Queue keycloakEventsQueue() {
+    Queue profileEventsQueue() {
         return new Queue(userRegisteredQueue, true);
     }
 
     @Bean
     Binding userRegisteredBinding() {
         return BindingBuilder
-                .bind(keycloakEventsQueue())
-                .to(keycloakEventsExchange())
+                .bind(profileEventsQueue())
+                .to(profileEventsExchange())
                 .with(userRegisteredRoutingKey);
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(jsonMessageConverter());
+        return rabbitTemplate;
     }
 
     @Bean

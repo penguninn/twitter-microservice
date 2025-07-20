@@ -1,10 +1,12 @@
 package com.david.profile_service.service;
 
+import com.david.common.dto.ApiEventMessage;
 import com.david.common.dto.FeignApiResponse;
 import com.david.common.dto.PageResponse;
 import com.david.common.dto.media.MediaResponse;
 import com.david.common.dto.profile.ProfileCreatedEventPayload;
 import com.david.common.dto.profile.ProfileResponse;
+import com.david.common.dto.profile.ProfileUpdatedEventPayload;
 import com.david.profile_service.dto.request.ChangePasswordRequest;
 import com.david.profile_service.dto.request.EmailUpdateRequest;
 import com.david.profile_service.dto.request.ProfileUpdateRequest;
@@ -23,6 +25,7 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachePut;
@@ -41,6 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +56,7 @@ public class ProfileService {
     private final Keycloak keycloakAdminClient;
     private final CacheManager cacheManager;
     private final ProfileMapper profileMapper;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${app.idp.realm}")
     private String realm;
@@ -64,6 +69,12 @@ public class ProfileService {
 
     @Value("${app.idp.client-secret}")
     private String clientSecret;
+
+    @Value("${app.rabbitmq.exchange.profile-events}")
+    private String profileEventsExchange;
+
+    @Value("${app.rabbitmq.routing-key.profile-updated}")
+    private String profileUpdatedRoutingKey;
 
     @Cacheable(cacheNames = "cacheProfileExists", key = "#userId")
     public boolean checkProfileExists(String userId) {
@@ -150,7 +161,6 @@ public class ProfileService {
         }
     }
 
-
     @Transactional
     @PreAuthorize("#    a0 == authentication.principal.subject or hasRole('ADMIN')")
     @Caching(
@@ -194,13 +204,40 @@ public class ProfileService {
             Profile updatedProfile = profileRepository.save(existingProfile);
             log.info("ProfileService::updateUsername - Username updated successfully in local DB. [userId: {}]", userId);
 
-            if(oldUsername != null && !oldUsername.equals(request.getUsername())) {
+            if (oldUsername != null && !oldUsername.equals(request.getUsername())) {
                 log.info("ProfileService::updateUsername - Updating cache for username: {}", oldUsername);
                 cacheManager.getCache("cacheProfileByUsername").evict(oldUsername);
             }
 
             ProfileResponse updatedResponse = profileMapper.toDto(updatedProfile);
             log.info("ProfileService::updateUsername - Execution ended successfully. [userId: {}]", userId);
+            ProfileUpdatedEventPayload eventPayload = ProfileUpdatedEventPayload.builder()
+                    .userId(updatedResponse.getUserId())
+                    .username(updatedResponse.getUsername())
+                    .email(updatedResponse.getEmail())
+                    .displayName(updatedResponse.getDisplayName())
+                    .gender(updatedProfile.isGender())
+                    .bio(updatedResponse.getBio())
+                    .location(updatedResponse.getLocation())
+                    .websiteUrl(updatedResponse.getWebsiteUrl())
+                    .profileImageUrl(updatedResponse.getProfileImageUrl())
+                    .bannerImageUrl(updatedResponse.getBannerImageUrl())
+                    .joinDate(updatedResponse.getJoinDate())
+                    .dateOfBirth(updatedResponse.getDateOfBirth())
+                    .build();
+            try {
+                rabbitTemplate.convertAndSend(profileEventsExchange, profileUpdatedRoutingKey,
+                        ApiEventMessage.builder()
+                                .eventId(UUID.randomUUID().toString())
+                                .eventType("PROFILE_UPDATED")
+                                .payload(eventPayload)
+                                .timestamp(String.valueOf(System.currentTimeMillis()))
+                                .build());
+                log.info("ProfileService::updateUsername - Profile updated event sent successfully. [userId: {}]", userId);
+            } catch (Exception e) {
+                log.error("ProfileService::updateUsername - Failed to send profile updated event. [userId: {}]", userId, e);
+                throw new ProfileServiceException("Failed to send profile updated event: " + e.getMessage(), e);
+            }
             return updatedResponse;
         } catch (ProfileServiceException | ProfileNotFoundException e) {
             throw e;
@@ -244,9 +281,37 @@ public class ProfileService {
 
             existingProfile.setEmail(request.getEmail());
             Profile updatedProfile = profileRepository.save(existingProfile);
-            log.info("ProfileService::updateEmail - Email (and possibly username) updated successfully in local DB. [userId: {}]", userId);
+            log.info("ProfileService::updateEmail - Email updated successfully in local DB. [userId: {}]", userId);
+            ProfileResponse updatedResponse = profileMapper.toDto(updatedProfile);
             log.info("ProfileService::updateEmail - Execution ended successfully. [userId: {}]", userId);
-            return profileMapper.toDto(updatedProfile);
+            ProfileUpdatedEventPayload eventPayload = ProfileUpdatedEventPayload.builder()
+                    .userId(updatedResponse.getUserId())
+                    .username(updatedResponse.getUsername())
+                    .email(updatedResponse.getEmail())
+                    .displayName(updatedResponse.getDisplayName())
+                    .gender(updatedProfile.isGender())
+                    .bio(updatedResponse.getBio())
+                    .location(updatedResponse.getLocation())
+                    .websiteUrl(updatedResponse.getWebsiteUrl())
+                    .profileImageUrl(updatedResponse.getProfileImageUrl())
+                    .bannerImageUrl(updatedResponse.getBannerImageUrl())
+                    .joinDate(updatedResponse.getJoinDate())
+                    .dateOfBirth(updatedResponse.getDateOfBirth())
+                    .build();
+            try {
+                rabbitTemplate.convertAndSend(profileEventsExchange, profileUpdatedRoutingKey,
+                        ApiEventMessage.builder()
+                                .eventId(UUID.randomUUID().toString())
+                                .eventType("PROFILE_UPDATED")
+                                .payload(eventPayload)
+                                .timestamp(String.valueOf(System.currentTimeMillis()))
+                                .build());
+                log.info("ProfileService::updateEmail - Profile updated event sent successfully. [userId: {}]", userId);
+            } catch (Exception e) {
+                log.error("ProfileService::updateEmail - Failed to send profile updated event. [userId: {}]", userId, e);
+                throw new ProfileServiceException("Failed to send profile updated event: " + e.getMessage(), e);
+            }
+            return updatedResponse;
         } catch (ProfileServiceException | ProfileNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -309,8 +374,40 @@ public class ProfileService {
 
             Profile updatedProfile = profileRepository.save(existingProfile);
             log.info("ProfileService::updateProfile - Profile updated successfully in local DB. [userId: {}]", userId);
+
+            ProfileResponse updatedResponse = profileMapper.toDto(updatedProfile);
             log.info("ProfileService::updateProfile - Execution ended successfully. [userId: {}]", userId);
-            return profileMapper.toDto(updatedProfile);
+
+            ProfileUpdatedEventPayload eventPayload = ProfileUpdatedEventPayload.builder()
+                    .userId(updatedResponse.getUserId())
+                    .username(updatedResponse.getUsername())
+                    .email(updatedResponse.getEmail())
+                    .displayName(updatedResponse.getDisplayName())
+                    .gender(updatedProfile.isGender())
+                    .bio(updatedResponse.getBio())
+                    .location(updatedResponse.getLocation())
+                    .websiteUrl(updatedResponse.getWebsiteUrl())
+                    .profileImageUrl(updatedResponse.getProfileImageUrl())
+                    .bannerImageUrl(updatedResponse.getBannerImageUrl())
+                    .joinDate(updatedResponse.getJoinDate())
+                    .dateOfBirth(updatedResponse.getDateOfBirth())
+                    .build();
+
+            try {
+                rabbitTemplate.convertAndSend(profileEventsExchange, profileUpdatedRoutingKey,
+                        ApiEventMessage.builder()
+                                .eventId(UUID.randomUUID().toString())
+                                .eventType("PROFILE_UPDATED")
+                                .payload(eventPayload)
+                                .timestamp(String.valueOf(System.currentTimeMillis()))
+                                .build());
+                log.info("ProfileService::updateProfile - Profile updated event sent successfully. [userId: {}]", userId);
+            } catch (Exception e) {
+                log.error("ProfileService::updateProfile - Failed to send profile updated event. [userId: {}]", userId, e);
+                throw new ProfileServiceException("Failed to send profile updated event: " + e.getMessage(), e);
+            }
+
+            return updatedResponse;
         } catch (ProfileServiceException | ProfileNotFoundException e) {
             throw e;
         } catch (Exception e) {

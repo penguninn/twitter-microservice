@@ -1,60 +1,11 @@
-server:
-  port: 8089
 spring:
   application:
     name: search-service
-  elasticsearch:
-    uris: http://localhost:9200
-    username: elastic
-    password: admin
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin
-    listener:
-      simple:
-        default-requeue-rejected: false
-eureka:
-  client:
-    service-url:
-      default-zone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
-
-app:
-  rabbitmq:
-    exchange:
-      identity-events: identity.events.exchange
-      tweet-events: tweet.events.exchange
-    queue:
-      search-tweet-created: search.tweet.created.queue
-      search-tweet-updated: search.tweet.updated.queue
-      search-tweet-deleted: search.tweet.deleted.queue
-      search-profile-updated: search.profile.updated.queue
-    routing-key:
-      tweet-created: tweet.event.created
-      tweet-updated: tweet.event.updated
-      tweet-deleted: tweet.event.deleted
-      user-registered: identity.event.registered
-
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: ["health", "info", "prometheus", "metrics", "elasticsearch"]
-  info:
-    env:
-      enabled: true
-info:
-  app:
-    name: notification-service
-
-logging:
-  level:
-    com.david.search_service: DEBUG
-    org.springframework.data.elasticsearch.client: INFO # DEBUG or TRACE for ES client logs
-    # org.elasticsearch.client: TRACE # For very detailed ES client logs
-    org.springframework.web: INFO
-    org.springframework.amqp.rabbit.listener: INFO
+  profiles:
+    active: dev
+  config:
+    import: configserver:http://localhost:8888
+  cloud:
+    config:
+      uri: http://localhost:8888
+      name: search-service

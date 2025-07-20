@@ -70,7 +70,7 @@ public class TimelineService {
 
     public void handleNewTweet(TweetCreatedEventPayload payload) {
         log.info("TimelineService::handleNewTweet - Execution started for userId: {}, tweetId: {}",
-                payload.getUserId(), payload.getTweetId());
+                payload.getUserId(), payload.getId());
         FeignApiResponse<PageResponse<List<FollowResponse>>> followersResponse = followClient.getFollowers(
                 payload.getUserId(),
                 1,
@@ -87,14 +87,14 @@ public class TimelineService {
         List<TimelineEntry> timelineEntries = followerIds.stream()
                 .map(followerId -> TimelineEntry.builder()
                         .userId(followerId)
-                        .tweetId(payload.getTweetId())
+                        .tweetId(payload.getId())
                         .tweetAt(payload.getCreatedAt())
                         .tweetOwnerId(payload.getUserId())
                         .build())
                 .toList();
         timelineRepository.saveAll(timelineEntries);
         log.info("TimelineService::handleNewTweet - Execution ended for userId: {}, tweetId: {}",
-                payload.getUserId(), payload.getTweetId());
+                payload.getUserId(), payload.getId());
     }
 
     public List<TweetResponse> getTimeline(int page, int size, String sortBy) {

@@ -1,19 +1,16 @@
-package com.david.common.dto.tweet;
+package com.david.search_service.dto.response;
 
 import com.david.common.dto.media.MediaResponse;
+import com.david.common.dto.tweet.StatsResponse;
 import com.david.common.enums.Visibility;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class TweetCreatedEventPayload implements Serializable {
+public class TweetSearchResponseDTO {
 
     private String id;
 

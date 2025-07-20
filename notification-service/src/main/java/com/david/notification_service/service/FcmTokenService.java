@@ -46,8 +46,13 @@ public class FcmTokenService {
 
     public void sendPushNotification(FcmToken fcmToken, Notification notification) {
         log.info("Sending push notification");
+        com.google.firebase.messaging.Notification firebaseNotification = com.google.firebase.messaging.Notification.builder()
+                .setTitle("New Notification")
+                .setBody(notification.getMessage())
+                .build();
         Message message = Message.builder()
                 .setToken(fcmToken.getToken())
+                .setNotification(firebaseNotification)
                 .putData("id", notification.getId())
                 .putData("userId", notification.getUserId())
                 .putData("senderId", notification.getSenderId())

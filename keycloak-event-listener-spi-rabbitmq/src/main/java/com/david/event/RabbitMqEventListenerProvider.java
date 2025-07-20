@@ -3,6 +3,7 @@ package com.david.event;
 import com.david.common.dto.profile.ProfileCreatedEventPayload;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.ConnectionFactory;
+
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
