@@ -20,6 +20,6 @@ management:
       exposure:
         include: ["health", "info", "env", "refresh"]
 
-#logging:
-#  level:
-#    org.springframework.cloud.config: debug
+logging:
+  level:
+    org.springframework.cloud.config: debug
