@@ -1,289 +1,498 @@
-# Twitter Microservice Architecture
+# Twitter Microservices Platform
 
-## Overview
-This project is a comprehensive microservice implementation simulating the core functionality of Twitter, built with Spring Boot and Spring Cloud. The architecture is designed for scalability, maintainability, and resilience, employing modern cloud-native patterns and technologies.
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.java.net/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.1-brightgreen.svg)](https://spring.io/projects/spring-cloud)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Table of Contents
-- [Technology Stack](#technology-stack)
-- [Project Architecture](#project-architecture)
-- [Core Services](#core-services)
-- [Database Architecture](#database-architecture)
-- [Security Architecture](#security-architecture)
-- [Event-Driven Architecture](#event-driven-architecture)
-- [Caching Strategy](#caching-strategy)
-- [Configuration Management](#configuration-management)
-- [Prerequisites](#prerequisites)
-- [Infrastructure Setup](#infrastructure-setup)
-- [Running the Project](#running-the-project)
-- [API Documentation](#api-documentation)
-- [Monitoring and Observability](#monitoring-and-observability)
-- [Deployment](#deployment)
-- [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
+> A production-ready, scalable Twitter clone built with Spring Boot microservices architecture, featuring OAuth2 authentication, real-time notifications, and comprehensive media handling.
 
-## Technology Stack
-- **Java**: JDK 21
-- **Framework**: Spring Boot 3.4.5, Spring Cloud 2024.0.1
+## 🚀 Features
+
+- **User Management**: Complete profile lifecycle with Keycloak OAuth2 integration
+- **Social Media Core**: Tweet creation, engagement (likes), commenting, and following
+- **Real-time Search**: Elasticsearch-powered full-text search across tweets and users
+- **Media Handling**: Azure Blob Storage integration for images and videos
+- **Push Notifications**: Firebase Cloud Messaging for real-time alerts
+- **Timeline Generation**: Event-driven personalized feed aggregation
+- **Microservices Architecture**: 12 independently deployable services
+- **Circuit Breakers**: Resilience4j for fault tolerance
+- **Event-Driven**: RabbitMQ messaging for loose coupling
+- **Multi-Database**: Polyglot persistence with MySQL, MongoDB, and Elasticsearch
+
+## 📋 Table of Contents
+
+- [🏗️ Architecture](#️-architecture)
+- [🛠️ Technology Stack](#️-technology-stack)
+- [📦 Services Overview](#-services-overview)
+- [🗄️ Data Architecture](#️-data-architecture)
+- [🔐 Security](#-security)
+- [⚡ Event System](#-event-system)
+- [🚀 Quick Start](#-quick-start)
+- [📖 API Documentation](#-api-documentation)
+- [🐳 Deployment](#-deployment)
+- [📊 Monitoring](#-monitoring)
+- [🤝 Contributing](#-contributing)
+
+## 🛠️ Technology Stack
+
+### Core Framework
+- **Java 21** - Modern JDK with latest features
+- **Spring Boot 3.4.5** - Main application framework
+- **Spring Cloud 2024.0.1** - Microservices toolkit
+- **Maven** - Dependency management and build tool
+
+### Infrastructure
 - **Service Discovery**: Spring Cloud Netflix Eureka
-- **Configuration Management**: Spring Cloud Config with Git backend
-- **API Gateway**: Spring Cloud Gateway
-- **Circuit Breaking & Resilience**: Resilience4j
-- **Documentation**: SpringDoc OpenAPI (Swagger UI)
-- **Messaging**: RabbitMQ
-- **Security**: OAuth2, JWT, Keycloak
-- **Databases**:
-  - MySQL (Profile Service)
-  - MongoDB (Tweet, Comment, Follow, Notification, Timeline Services)
-  - Elasticsearch (Search Service)
-  - Redis (Caching for various services)
-- **Storage**: Azure Blob Storage (Media Service)
-- **Build Tool**: Maven
-- **Container**: Docker & Docker Compose
-- **Monitoring**: Spring Boot Actuator, Prometheus, Grafana
-- **Testing**: JUnit 5, Testcontainers, WireMock
+- **API Gateway**: Spring Cloud Gateway with load balancing
+- **Configuration**: Spring Cloud Config Server with Git backend
+- **Circuit Breakers**: Resilience4j for fault tolerance
+- **Message Broker**: RabbitMQ for event-driven communication
 
-## Project Architecture
+### Security
+- **Authentication**: Keycloak OAuth2/OpenID Connect
+- **Authorization**: JWT tokens with role-based access control
+- **Resource Security**: Spring Security OAuth2 Resource Server
+
+### Data Storage
+- **MySQL 8.0+** - User profiles and relational data
+- **MongoDB 5.0+** - Document storage for tweets, comments, follows
+- **Elasticsearch 9.0+** - Full-text search and analytics
+- **Redis 6.2+** - Caching and session storage
+- **Azure Blob Storage** - Media files storage
+
+### Monitoring & DevOps
+- **Spring Boot Actuator** - Application monitoring endpoints
+- **Docker & Docker Compose** - Containerization
+- **Swagger/OpenAPI 3** - API documentation
+- **Custom Keycloak Theme** - Tailwind CSS styling
+
+## 🏗️ Architecture
 
 ### System Overview
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Web Client    │────│   Mobile Client  │────│   Third Party   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────────┐
-                    │    API Gateway      │
-                    │      (8080)         │
-                    └─────────────────────┘
-                                 │
-                    ┌─────────────────────┐
-                    │   Service Registry  │
-                    │      (8761)         │
-                    └─────────────────────┘
-                                 │
-    ┌────────────────────────────┼────────────────────────────┐
-    │                           │                             │
-┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐
-│ Profile   │  │   Tweet   │  │  Comment  │  │  Follow   │  │ Timeline  │
-│ Service   │  │ Service   │  │ Service   │  │ Service   │  │ Service   │
-│  (8081)   │  │  (8083)   │  │  (8085)   │  │  (8086)   │  │  (8087)   │
-└───────────┘  └───────────┘  └───────────┘  └───────────┘  └───────────┘
 
-┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐
-│   Media   │  │Notification│  │  Search   │  │  Config   │
-│ Service   │  │ Service    │  │ Service   │  │ Service   │
-│  (8082)   │  │  (8084)    │  │  (8089)   │  │  (8888)   │
-└───────────┘  └───────────┘  └───────────┘  └───────────┘
-```
-
-## Core Services
-
-### 1. API Gateway (Port: 8080)
-The API Gateway serves as the single entry point for all client requests and provides:
-- Centralized routing to microservices
-- Load balancing with service discovery integration
-- Authentication and authorization via OAuth2/JWT
-- Circuit breaker patterns with Resilience4j
-- Request rate limiting and throttling
-- Request/response transformation
-- Swagger UI aggregation for all services
-- CORS handling
-- Request/response logging
-- Monitoring endpoints
-
-**Key Features:**
-- Dynamic routing based on service discovery
-- JWT token validation and forwarding
-- Rate limiting per user/IP
-- Circuit breaker with fallback responses
-- Request timeout configuration
-- Health check aggregation
-
-### 2. Config Service (Port: 8888)
-The Config Service provides externalized configuration for all microservices:
-- Centralized configuration management
-- Environment-specific configurations (dev, prod, test)
-- Git integration for version control of configurations
-- Encrypted property support for sensitive data
-- Dynamic configuration updates with refresh scope
-- High availability configuration
-- Health monitoring endpoints
-
-**Configuration Structure:**
-```
-config-repo/
-├── application.yaml              # Common base config
-├── service-name.yaml            # Service base config
-├── service-name-dev.yaml        # Development config
-├── service-name-prod.yaml       # Production config
-└── service-name-test.yaml       # Testing config
+```mermaid
+graph TB
+    Client["🌐 Clients<br/>(Web/Mobile/API)"]
+    
+    subgraph "Infrastructure Layer"
+        Gateway["🚪 API Gateway<br/>:8080"]
+        Registry["📋 Service Registry<br/>:8761"]
+        Config["⚙️ Config Server<br/>:8888"]
+        Keycloak["🔐 Keycloak<br/>:9000"]
+    end
+    
+    subgraph "Business Services"
+        Profile["👤 Profile Service<br/>:8081"]
+        Tweet["🐦 Tweet Service<br/>:8083"]
+        Comment["💬 Comment Service<br/>:8085"]
+        Follow["👥 Follow Service<br/>:8086"]
+        Timeline["📰 Timeline Service<br/>:8087"]
+        Media["📸 Media Service<br/>:8082"]
+        Notification["🔔 Notification Service<br/>:8084"]
+        Search["🔍 Search Service<br/>:8089"]
+    end
+    
+    subgraph "Data Layer"
+        MySQL[("MySQL<br/>Profiles")]
+        MongoDB[("MongoDB<br/>Tweets/Comments/Follows")]
+        Elasticsearch[("Elasticsearch<br/>Search Index")]
+        Redis[("Redis<br/>Cache")]
+        Azure[("Azure Blob<br/>Media Storage")]
+    end
+    
+    subgraph "Messaging"
+        RabbitMQ["🐰 RabbitMQ<br/>Event Bus"]
+    end
+    
+    Client --> Gateway
+    Gateway --> Registry
+    Gateway --> Keycloak
+    
+    Gateway --> Profile
+    Gateway --> Tweet
+    Gateway --> Comment
+    Gateway --> Follow
+    Gateway --> Timeline
+    Gateway --> Media
+    Gateway --> Notification
+    Gateway --> Search
+    
+    Profile --> MySQL
+    Tweet --> MongoDB
+    Comment --> MongoDB
+    Follow --> MongoDB
+    Timeline --> MongoDB
+    Notification --> MongoDB
+    Search --> Elasticsearch
+    
+    Profile --> Redis
+    Tweet --> Redis
+    Timeline --> Redis
+    Search --> Redis
+    
+    Media --> Azure
+    
+    Profile --> RabbitMQ
+    Tweet --> RabbitMQ
+    Follow --> RabbitMQ
+    Comment --> RabbitMQ
+    Notification --> RabbitMQ
+    Search --> RabbitMQ
+    Timeline --> RabbitMQ
 ```
 
-### 3. Registry Service (Port: 8761)
-The Registry Service implements service discovery using Netflix Eureka:
-- Automatic service registration and discovery
-- Health monitoring of registered services
-- Dashboard for service status visualization
-- Self-preservation mode for network partitions
-- Load balancing integration
-- Resilience to network issues
-- Instance metadata management
+### Key Architecture Principles
 
-### 4. Profile Service (Port: 8081)
-The Profile Service manages user profiles and accounts:
-- User profile CRUD operations
-- MySQL database for persistent storage
-- Redis caching for frequently accessed profiles
-- Keycloak integration for account management
-- User preferences management
-- Follow relationship status tracking
-- Event publishing for profile changes
-- Integration with media service for profile images
+- **Database per Service**: Each microservice owns its data
+- **Event-Driven Communication**: Asynchronous messaging via RabbitMQ
+- **Circuit Breaker Pattern**: Fault tolerance with Resilience4j
+- **Centralized Configuration**: Git-based configuration management
+- **Service Discovery**: Automatic service registration and discovery
+- **API Gateway Pattern**: Single entry point with authentication
+- **Polyglot Persistence**: Right database for the right job
 
-**Database Schema:**
-- Users table with profile information
-- User preferences and settings
-- Profile statistics (followers, following counts)
+## 📦 Services Overview
 
-### 5. Tweet Service (Port: 8083)
-The Tweet Service handles the core content creation functionality:
-- Tweet creation, retrieval, update, and deletion
-- Support for text content, hashtags, and mentions
-- Thread creation and management
-- Engagement tracking (likes, retweets, views)
-- MongoDB for document storage
-- Redis for caching and counters
-- Event publishing for timeline updates
-- Media attachments via Media Service integration
-- Content moderation capabilities
+### 🚪 API Gateway
+**Port**: 8080 | **Database**: None | **Tech**: Spring Cloud Gateway + OAuth2
 
-**Tweet Document Structure:**
-```json
-{
-  "id": "ObjectId",
-  "userId": "string",
-  "content": "string",
-  "hashtags": ["string"],
-  "mentions": ["string"],
-  "mediaIds": ["string"],
-  "stats": {
-    "likes": 0,
-    "retweets": 0,
-    "replies": 0,
-    "views": 0
-  },
-  "createdAt": "datetime",
-  "updatedAt": "datetime"
+The unified entry point for all client requests, providing:
+- **Authentication**: OAuth2/JWT token validation via Keycloak
+- **Routing**: Dynamic load-balanced routing to microservices
+- **Circuit Breakers**: Resilience4j fault tolerance patterns
+- **Swagger Aggregation**: Centralized API documentation
+- **CORS**: Cross-origin request handling
+
+**Routes**:
+```yaml
+/api/profiles/** → Profile Service
+/api/tweets/** → Tweet Service
+/api/comments/** → Comment Service
+/api/follows/** → Follow Service
+/api/timeline/** → Timeline Service
+/api/media/** → Media Service
+/api/notifications/** → Notification Service
+/api/search/** → Search Service
+```
+
+### ⚙️ Config Service
+**Port**: 8888 | **Database**: Git Repository | **Tech**: Spring Cloud Config Server
+
+Centralized configuration management with Git backend:
+- **Configuration Source**: [https://github.com/penguninn/social-app-config.git](https://github.com/penguninn/social-app-config.git)
+- **Environment Profiles**: dev, prod, test configurations
+- **Security**: Encrypted sensitive properties
+- **Refresh**: Dynamic configuration updates via `/actuator/refresh`
+
+**Configuration Pattern**:
+```
+{service-name}-{profile}.yaml
+example: profile-service-dev.yaml
+```
+
+### 📋 Service Registry
+**Port**: 8761 | **Database**: In-Memory | **Tech**: Netflix Eureka Server
+
+Service discovery and registration hub:
+- **Auto-Registration**: Services register automatically on startup
+- **Health Monitoring**: Continuous health checks with heartbeats
+- **Dashboard**: Web UI at `http://localhost:8761`
+- **Load Balancing**: Client-side load balancing support
+- **Self-Preservation**: Handles network partition scenarios
+
+### 👤 Profile Service
+**Port**: 8081 | **Database**: MySQL + Redis Cache | **Tech**: Spring Boot + JPA + Keycloak Admin Client
+
+Complete user profile and account management:
+
+**Features**:
+- **User Management**: Direct Keycloak integration for user CRUD operations
+- **Profile Data**: Complete profile information with image upload support
+- **Caching**: Redis caching for profile data by ID and username
+- **Events**: RabbitMQ events for profile updates
+
+**Database Schema (MySQL)**:
+```sql
+TABLE profiles {
+  id BIGINT PRIMARY KEY AUTO_INCREMENT
+  userId VARCHAR(255) UNIQUE NOT NULL  # Keycloak user ID
+  username VARCHAR(255) UNIQUE
+  email VARCHAR(255)
+  displayName VARCHAR(255)
+  bio TEXT
+  location VARCHAR(255)
+  websiteUrl VARCHAR(2048)
+  profileImageUrl VARCHAR(2048)
+  bannerImageUrl VARCHAR(2048)
+  dateOfBirth DATE
+  joinDate DATE
+  gender BOOLEAN
 }
 ```
 
-### 6. Comment Service (Port: 8085)
-The Comment Service manages replies and conversations:
-- Comment creation and threading
-- Nested replies support
-- Engagement tracking for comments
-- MongoDB for document storage
-- Event publishing for notifications
-- Integration with tweets and user profiles
-- Content moderation capabilities
-- Pagination and sorting for comment threads
-- Real-time updates for active conversations
+**Key Endpoints**:
+- `GET /api/v1/profiles/i/{userId}` - Get profile by user ID
+- `GET /api/v1/profiles/u/{username}` - Get profile by username
+- `PATCH /api/v1/profiles/{userId}` - Update profile with media upload
+- `PATCH /api/v1/profiles/{userId}/username` - Update username
+- `DELETE /api/v1/profiles/{userId}` - Delete profile and Keycloak user
 
-### 7. Follow Service (Port: 8086)
-The Follow Service manages social connections between users:
-- Follow/unfollow functionality
-- Follower and following lists
-- Blocking and muting capabilities
-- Suggested users to follow
-- Event publishing for timeline updates
-- MongoDB for relationship storage
-- Social graph analysis for recommendations
-- Follow request handling for private accounts
-- Analytics for follow patterns
+### 🐦 Tweet Service
+**Port**: 8083 | **Database**: MongoDB | **Tech**: Spring Boot + MongoDB + Media Upload
 
-### 8. Timeline Service (Port: 8087)
-The Timeline Service generates personalized user feeds:
-- Home timeline construction from followed accounts
-- Algorithmic "For You" timeline recommendations
-- Chronological "Latest" timeline
-- Topic-based timelines
-- Event-driven updates from Tweet/Comment/Follow services
-- MongoDB for timeline storage and caching
-- Redis caching for improved performance
-- Personalization based on user interests and engagement
-- Real-time updates for active users
-- Pagination and infinite scrolling support
+Core content creation and engagement system:
 
-### 9. Media Service (Port: 8082)
-The Media Service handles all media content:
-- Image, video, and GIF uploads and storage
-- Azure Blob Storage integration
-- Media processing and optimization
-- Thumbnail generation
-- Content-type validation
-- Secure access controls
-- MIME type detection with Apache Tika
-- Support for various media formats
-- Integration with tweets and user profiles
+**Features**:
+- **Tweet CRUD**: Create, read, update, delete tweets with media support
+- **Engagement**: Like/unlike functionality with real-time stats
+- **Media Support**: Multipart file upload integration
+- **Hashtags**: Automatic hashtag extraction from content
+- **Visibility**: Public, private, followers-only tweet visibility
+- **Events**: RabbitMQ events for timeline and search indexing
 
-**Supported Formats:**
-- Images: JPEG, PNG, GIF, WebP
-- Videos: MP4, MOV, AVI (up to 10MB)
-- Maximum file size: 10MB per file
-- Automatic thumbnail generation
+**Document Schema (MongoDB)**:
+```javascript
+{
+  _id: ObjectId,
+  userId: String,
+  content: String,
+  mediaItems: [{
+    mediaId: String,
+    mediaType: String,
+    mediaUrl: String
+  }],
+  hashtags: [String],
+  stats: { likesCount: Number },
+  likedBy: [String],
+  visibility: "PUBLIC" | "PRIVATE" | "FOLLOWERS_ONLY",
+  createdAt: Long,
+  updatedAt: Long
+}
+```
 
-### 10. Notification Service (Port: 8084)
-The Notification Service manages user alerts and notifications:
-- Real-time notification delivery
-- Multiple notification types (mentions, likes, follows, etc.)
-- Firebase Cloud Messaging integration for push notifications
-- Email notifications via SendGrid
-- Notification preferences management
-- MongoDB for notification storage
-- Delivery status tracking
-- Read/unread state management
-- Notification batching and throttling
+**Key Endpoints**:
+- `POST /api/v1/tweets` - Create tweet with media upload
+- `GET /api/v1/tweets/{id}` - Get tweet by ID
+- `GET /api/v1/tweets/me` - Get current user's tweets
+- `POST /api/v1/tweets/{id}/likes` - Like tweet
+- `DELETE /api/v1/tweets/{id}/likes` - Unlike tweet
+- `GET /api/v1/tweets/batch?ids=[]` - Batch get tweets
 
-**Notification Types:**
-- New follower
-- Tweet liked/retweeted
-- Mention in tweet
-- Reply to tweet
-- New comment
-- Direct messages
+### 💬 Comment Service
+**Port**: 8085 | **Database**: MongoDB | **Tech**: Spring Boot + MongoDB
 
-### 11. Search Service (Port: 8089)
-The Search Service provides robust search capabilities:
-- Full-text search across tweets, users, and hashtags
-- Elasticsearch for high-performance indexing and querying
-- Real-time indexing via event processing
-- Redis caching for search results
-- Relevance ranking and scoring
-- Filtering and faceted search
-- Autocomplete and search suggestions
-- Trending topics identification
-- Type-ahead search functionality
-- Personalized search results
+Hierarchical commenting system with nested replies:
 
-**Search Features:**
-- Global search across all content
-- User-specific searches
-- Hashtag trending analysis
-- Search result caching
-- Advanced filtering options
+**Features**:
+- **Comments & Replies**: Two-level comment hierarchy (comments → replies)
+- **Thread Management**: Organized comment threads per tweet
+- **Event Publishing**: RabbitMQ events for notifications
 
-### 12. Common Library
-The Common module provides shared components across services:
-- Data transfer objects (DTOs)
-- Exception handling
-- Common utilities
-- Event definitions
-- Security configurations
-- Response models
-- Validation utilities
-- Messaging configurations
+**Document Schema (MongoDB)**:
+```javascript
+{
+  _id: ObjectId,
+  tweetId: String,
+  userId: String,
+  content: String,
+  parentId: String,  // For replies
+  type: "COMMENT" | "REPLY",
+  createdAt: Long,
+  updatedAt: Long
+}
+```
+
+**Key Endpoints**:
+- `POST /api/v1/tweets/{tweetId}/comments` - Create comment
+- `POST /api/v1/comments/{parentId}/replies` - Reply to comment
+- `GET /api/v1/tweets/{tweetId}/comments` - Get tweet comments
+- `GET /api/v1/comments/{commentId}/replies` - Get comment replies
+
+### 👥 Follow Service
+**Port**: 8086 | **Database**: MongoDB | **Tech**: Spring Boot + MongoDB
+
+Social relationship management system:
+
+**Features**:
+- **Follow/Unfollow**: Simple follow relationship management
+- **Relationship Queries**: Check follow status, get followers/following lists
+- **Event-Driven**: Publishes follow events for timeline updates
+
+**Document Schema (MongoDB)**:
+```javascript
+{
+  _id: ObjectId,
+  followerId: String,    // User who follows
+  followedId: String,    // User being followed
+  createdAt: Long
+}
+```
+
+**Key Endpoints**:
+- `POST /api/v1/follows/{followedId}` - Follow user
+- `DELETE /api/v1/follows/{followedId}` - Unfollow user
+- `GET /api/v1/follows/{followerId}` - Check if following
+- `GET /api/v1/follows/{followedId}/followers` - Get followers
+- `GET /api/v1/follows/{followerId}/following` - Get following list
+
+### 📰 Timeline Service
+**Port**: 8087 | **Database**: MongoDB | **Tech**: Spring Boot + MongoDB + Feign Clients
+
+Personalized feed generation and aggregation:
+
+**Features**:
+- **Home Timeline**: Aggregated tweets from followed users
+- **Event-Driven Updates**: Real-time timeline updates via RabbitMQ
+- **Data Enrichment**: Feign clients to fetch tweet and profile data
+- **Timeline Storage**: Pre-computed timeline entries for performance
+
+**Document Schema (MongoDB)**:
+```javascript
+{
+  _id: ObjectId,
+  userId: String,        // Timeline owner
+  tweetId: String,       // Referenced tweet
+  tweetOwnerId: String,  // Tweet author
+  tweetAt: Long,         // Tweet creation timestamp
+  createdAt: Long        // Timeline entry creation
+}
+```
+
+**Key Endpoints**:
+- `GET /api/v1/timeline` - Get personalized timeline
+
+**Event Handlers**:
+- Tweet creation → Add to followers' timelines
+- Follow event → Backfill timeline with followee's tweets
+
+### 📸 Media Service
+**Port**: 8082 | **Database**: Azure Blob Storage | **Tech**: Spring Boot + Azure SDK
+
+Media file upload and storage management:
+
+**Features**:
+- **Azure Blob Integration**: Direct upload to Azure Blob Storage
+- **File Type Support**: Images and other media file groups
+- **Content Validation**: File type and size validation
+- **Secure Upload**: OAuth2 protected endpoints
+
+**Key Endpoints**:
+- `POST /api/v1/media` - Upload media files (multipart)
+
+**Supported File Types**:
+- **Images**: JPEG, PNG, GIF, WebP
+- **Videos**: MP4, MOV, AVI
+- **Documents**: PDF, DOC, DOCX (configurable)
+
+**Azure Configuration**:
+```yaml
+azure:
+  storage:
+    connection-string: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;..."
+    container-name: "twitter"
+```
+
+### 🔔 Notification Service
+**Port**: 8084 | **Database**: MongoDB | **Tech**: Spring Boot + MongoDB + FCM
+
+Real-time notification system with push notification support:
+
+**Features**:
+- **Notification Management**: Create, read, delete notifications
+- **Push Notifications**: Firebase Cloud Messaging integration
+- **Event-Driven**: RabbitMQ listeners for automatic notification creation
+- **Bulk Operations**: Mark all as read, bulk delete
+
+**Document Schemas (MongoDB)**:
+```javascript
+// Notifications
+{
+  _id: ObjectId,
+  userId: String,
+  senderId: String,
+  type: "LIKE" | "COMMENT" | "FOLLOW" | "TWEET",
+  message: String,
+  read: Boolean,
+  createdAt: String
+}
+
+// FCM Tokens
+{
+  _id: ObjectId,
+  userId: String,
+  token: String,
+  device: String
+}
+```
+
+**Key Endpoints**:
+- `GET /api/v1/notifications` - Get user notifications
+- `GET /api/v1/notifications/unread/count` - Get unread count
+- `PATCH /api/v1/notifications/{id}/read` - Mark as read
+- `PATCH /api/v1/notifications/read-all` - Mark all as read
+- `DELETE /api/v1/notifications` - Bulk delete
+
+**Event Handlers**:
+- Tweet liked → Notification to tweet author
+- Comment created → Notification to tweet author
+- User followed → Notification to followed user
+
+### 🔍 Search Service
+**Port**: 8089 | **Database**: Elasticsearch | **Tech**: Spring Boot + Elasticsearch + Redis Cache
+
+Full-text search across tweets and users with real-time indexing:
+
+**Features**:
+- **Real-time Indexing**: RabbitMQ event listeners for automatic ES indexing
+- **Full-text Search**: Advanced search capabilities across tweets and users
+- **User Context**: Search respects user permissions and visibility
+- **Caching**: Redis caching for search results
+
+**Elasticsearch Indices**:
+```javascript
+// tweets index
+{
+  id: String,
+  tweetId: String,
+  userId: String,
+  content: String,
+  mediaItems: [...],
+  hashtags: [String],
+  visibility: Enum,
+  createdAt: Long
+}
+
+// users index
+{
+  id: String,
+  userId: String,
+  username: String,
+  displayName: String,
+  bio: String,
+  location: String
+}
+```
+
+**Key Endpoints**:
+- `GET /api/v1/search/tweets?q={query}` - Search tweets
+- `GET /api/v1/search/users?q={query}` - Search users
+
+**Event Handlers**:
+- Tweet created/updated → Index in Elasticsearch
+- Profile updated → Update user index
+- Tweet deleted → Remove from index
+
+### 📚 Common Library
+Shared components and utilities across all services:
+
+**Components**:
+- **DTOs**: Standardized data transfer objects
+- **Exceptions**: Common exception handling patterns
+- **Events**: RabbitMQ event definitions
+- **Security**: OAuth2 security configurations
+- **Utilities**: Helper classes and validation utilities
+- **Messaging**: RabbitMQ configuration and listeners
 
 ## Database Architecture
 The project uses a polyglot persistence approach:
@@ -645,248 +854,3 @@ curl -X GET "http://localhost:8080/api/search/tweets?query=microservices" \
   -H "Authorization: Bearer ${ACCESS_TOKEN}"
 ```
 
-## Monitoring and Observability
-
-### Health Checks:
-```bash
-# Check all services health
-curl http://localhost:8080/actuator/health
-
-# Individual service health
-curl http://localhost:8081/actuator/health
-```
-
-### Metrics Endpoints:
-- **Prometheus Metrics**: `/actuator/prometheus`
-- **Application Metrics**: `/actuator/metrics`
-- **JVM Metrics**: `/actuator/metrics/jvm.*`
-- **Custom Metrics**: `/actuator/metrics/custom.*`
-
-### Logging Configuration:
-```yaml
-logging:
-  level:
-    com.david: DEBUG
-    org.springframework.web: INFO
-    org.springframework.security: WARN
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/application.log
-```
-
-### Distributed Tracing:
-- Request correlation IDs
-- Service call tracing
-- Performance monitoring
-- Error tracking
-
-## Deployment
-
-### Production Deployment Checklist:
-- [ ] Environment variables configured
-- [ ] Database migrations applied
-- [ ] SSL certificates installed
-- [ ] Monitoring and alerting configured
-- [ ] Backup strategies implemented
-- [ ] Load balancers configured
-- [ ] Auto-scaling policies set
-
-### Docker Production:
-```dockerfile
-# Multi-stage build example
-FROM openjdk:21-jdk-slim as builder
-WORKDIR /app
-COPY . .
-RUN ./mvnw clean package -DskipTests
-
-FROM openjdk:21-jre-slim
-WORKDIR /app
-COPY --from=builder /app/target/*.jar app.jar
-EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
-ENTRYPOINT ["java", "-jar", "app.jar"]
-```
-
-### Kubernetes Deployment:
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: profile-service
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: profile-service
-  template:
-    metadata:
-      labels:
-        app: profile-service
-    spec:
-      containers:
-      - name: profile-service
-        image: twitter/profile-service:latest
-        ports:
-        - containerPort: 8081
-        env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "prod"
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: db-credentials
-              key: url
-        livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8081
-          initialDelaySeconds: 60
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8081
-          initialDelaySeconds: 30
-          periodSeconds: 10
-```
-
-## Testing
-
-### Unit Tests:
-```bash
-# Run all unit tests
-mvn test
-
-# Run tests for specific service
-cd profile-service
-mvn test
-```
-
-### Integration Tests:
-```bash
-# Run integration tests with Testcontainers
-mvn verify -P integration-tests
-```
-
-### API Testing:
-```bash
-# Using Newman (Postman CLI)
-newman run twitter-api-tests.postman_collection.json \
-  -e dev-environment.postman_environment.json
-```
-
-### Performance Testing:
-```bash
-# Using Apache Bench
-ab -n 1000 -c 10 http://localhost:8080/api/tweets
-
-# Using JMeter
-jmeter -n -t twitter-load-test.jmx -l results.jtl
-```
-
-### Test Coverage:
-```bash
-# Generate coverage report
-mvn jacoco:report
-
-# View coverage in target/site/jacoco/index.html
-```
-
-## Troubleshooting
-
-### Common Issues:
-
-#### Service Registration Issues:
-```bash
-# Check Eureka dashboard
-http://localhost:8761
-
-# Verify service configuration
-curl http://localhost:8081/actuator/info
-```
-
-#### Database Connection Issues:
-```bash
-# Check database connectivity
-curl http://localhost:8081/actuator/health
-
-# Verify database configuration
-docker exec -it mysql_container mysql -u root -p
-```
-
-#### RabbitMQ Message Issues:
-```bash
-# Check RabbitMQ management
-http://localhost:15672 (admin/admin)
-
-# Verify message queues
-curl http://localhost:8081/actuator/health
-```
-
-#### Memory Issues:
-```bash
-# Increase JVM heap size
-export JAVA_OPTS="-Xmx2g -Xms1g"
-
-# Monitor memory usage
-curl http://localhost:8081/actuator/metrics/jvm.memory.used
-```
-
-### Debugging:
-```bash
-# Enable debug logging
-export LOGGING_LEVEL_COM_DAVID=DEBUG
-
-# Remote debugging
-java -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -jar app.jar
-```
-
-### Log Analysis:
-```bash
-# Search for errors
-grep -r "ERROR" logs/
-
-# Monitor real-time logs
-tail -f logs/application.log
-
-# Analyze specific service logs
-docker logs -f container_name
-```
-
-## Contributing
-
-### Development Workflow:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
-
-### Code Standards:
-- Java 21 features encouraged
-- Spring Boot best practices
-- Comprehensive unit tests (>80% coverage)
-- Integration tests for critical paths
-- API documentation with Swagger
-- Proper error handling and logging
-
-### Branch Strategy:
-- `main`: Production-ready code
-- `develop`: Integration branch
-- `feature/`: New features
-- `bugfix/`: Bug fixes
-- `hotfix/`: Critical production fixes
-
-### Pull Request Requirements:
-- [ ] Code compiles without warnings
-- [ ] All tests pass
-- [ ] Code coverage maintained/improved
-- [ ] Documentation updated
-- [ ] Changelog updated
-- [ ] API documentation updated
-
-This comprehensive README provides a complete guide to understanding, setting up, running, and maintaining the Twitter microservice architecture. It covers all aspects from development to production deployment, making it easy for both new contributors and operations teams to work with the system.
